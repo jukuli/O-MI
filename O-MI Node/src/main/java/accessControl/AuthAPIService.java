@@ -21,6 +21,7 @@ import akka.http.scaladsl.model.headers.HttpCookiePair;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.typesafe.config.*;
 import http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,11 +45,11 @@ import java.util.Iterator;
 public class AuthAPIService implements AuthApi {
 
     //TODO Settable
-    private final boolean useHTTPS = false;
-    private final int authServicePort = 8088;
-    private final String authServiceURIScheme = useHTTPS ? "https://" : "http://";
-    private final String mainURI = useHTTPS ? "localhost" : "localhost:"+authServicePort;
-    private final String authServiceURI = authServiceURIScheme + mainURI + "/omi/auth0/permissions";
+    //private final int authServicePort = 8088;
+
+    Config conf = ConfigFactory.load();
+    private final String mainURI = conf.getString("omisec.permission-service-url");
+    private final String authServiceURI = mainURI + "/omi/auth0/permissions";
 
     private final Logger logger = LoggerFactory.getLogger(AuthAPIService.class);
 
