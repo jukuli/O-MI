@@ -1,12 +1,17 @@
+package types
 package odf
 
 import scala.collection.{ Seq, Map, SortedSet }
+import scala.collection.immutable.{TreeSet, HashMap}
+import scala.xml.NodeSeq
+import parsing.xmlGen.xmlTypes.{ObjectsType, ObjectType}
+import parsing.xmlGen.{odfDefaultScope, scalaxb, defaultScope}
 
-trait ODF{
-  def nodes: Map[Path,Node]
-  def paths: SortedSet[Path]
+case class ODF(
+  val nodes: HashMap[Path,Node] = HashMap.empty
+){
+  val paths: SortedSet[Path] = TreeSet( nodes.keys.toSeq:_* )(PathOrdering)
 
-  def copy( nodes: Map[Path,Node] ): ODF
   def union( that: ODF ): ODF = {
     val pathIntersection: SortedSet[Path] = this.paths.intersect( that.paths)
     val thisOnlyNodes: Set[Node] = (paths -- pathIntersection ).flatMap{
@@ -37,14 +42,12 @@ trait ODF{
     val allPaths = paths ++ that.paths
     val allNodes = thisOnlyNodes ++ thatOnlyNodes ++ intersectingNodes
     this.copy( 
-      allNodes.flatMap{
-        case node: Node =>
-          if( node.parentPath.isEmpty ) 
-            throw new Exception( "Found odf.Node without parentPath when unioning.")
-          node.parentPath.map{
-            p => p -> node 
-          }
-      }.toMap 
+      HashMap(
+        allNodes.map{
+          case node: Node =>
+            node.path -> node 
+        }.toSeq:_*
+      )
     )
   }
   def getInfoItems: Map[Path,InfoItem] = nodes.collect{ 
@@ -70,22 +73,52 @@ trait ODF{
       .filter{    case p: Path => path.isParentOf(p) }
       .flatMap{   case p: Path => nodes.get(p) }.toVector
   }
+  
+  def removePaths( removedPaths: Iterable[Path] ) ={
+    ODF(
+      nodes -- removedPaths
+    )
+  }
+
+  def --( removedPaths: Iterable[Path] ) ={
+    ODF(
+      nodes -- removedPaths
+    )
+  }
+
+
+
   implicit def asObjectsType : ObjectsType ={
     val firstLevelObjects= getChilds( new Path("Objects") )
-    firstLevelObjects.map{
+    val objectTypes= firstLevelObjects.map{
       case obj: Object => 
         createObjectType( obj )
     }
+    nodes.get(new Path("Objects")).collect{
+      case objs: Objects =>
+        objs.asObjectsType(objectTypes) 
+    }.getOrElse{
+      (new Objects()).asObjectsType(objectTypes) 
+    }
   }
 
-  def createObjectType( obj: Object ) ={
+  def createObjectType( obj: Object ): ObjectType ={
     val (objects, infoItems ) = getChilds( obj.path ).partition{
       case obj: Object => true
       case ii: InfoItem => false
     }
     obj.asObjectType(
-      infoItems.map( _.asInfoItemsType ),
-      objects.map( createObjectType( _ ) )
+      infoItems.collect{
+        case ii: InfoItem => ii.asInfoItemType 
+      },
+      objects.collect{
+        case obj: Object =>
+          createObjectType( obj ) 
+      }
     )
+  }
+  implicit def asXML : NodeSeq= {
+    val xml  = scalaxb.toXML[ObjectsType](asObjectsType, None, Some("Objects"), odfDefaultScope)
+    xml//.asInstanceOf[Elem] % new UnprefixedAttribute("xmlns","odf.xsd", Node.NoAttributes)
   }
 }

@@ -1,3 +1,4 @@
+package types
 package odf
 import java.sql.Timestamp
 
@@ -29,6 +30,9 @@ trait Value[+V]{
       ("@dateTime" -> DataRecord(timestampToXML(timestamp)))
     ) ++ attributesToDataRecord( attributes )
     )
+  }
+  def asOdfValue: types.OdfTypes.OdfValue[Any] = {
+    types.OdfTypes.OdfValue( value, timestamp, HashMap( attributes.toSeq:_*) )
   }
 }
 
@@ -163,6 +167,9 @@ object Value{
     create match {
       case Success(value) => value
       case Failure( e: Exception) =>
+        //println( s"Creating of Value failed with type $typeValue, caused by: $e")
+        StringPresentedValue(value, timestamp, attributes = attributes)
+      case Failure( e: Throwable) =>
         //println( s"Creating of Value failed with type $typeValue, caused by: $e")
         StringPresentedValue(value, timestamp, attributes = attributes)
     }

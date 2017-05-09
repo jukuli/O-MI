@@ -1,3 +1,4 @@
+package types
 package odf
 
 import scala.collection.{ Seq, Map }
@@ -29,5 +30,8 @@ class MetaData(
       } ++ intersectedII
     )
   }
-  implicit def asMetaData : MetaDataType = MetaDataType( infoItems.map(_.asInfoItemType ).toSeq )
+  implicit def asMetaDataType : MetaDataType = MetaDataType( infoItems.map(_.asInfoItemType ).toSeq )
+  implicit def asOdfMetaData: types.OdfTypes.OdfMetaData = {
+    types.OdfTypes.OdfMetaData( infoItems.map( _.asOdfInfoItem ).toVector )
+  }
 }

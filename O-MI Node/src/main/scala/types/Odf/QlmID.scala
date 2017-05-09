@@ -1,3 +1,4 @@
+package types
 package odf
 
 import scala.collection.{ Seq, Map }
@@ -11,12 +12,12 @@ case class QlmID(
   val id: String,
   val idType: Option[String] =  None,
   val tagType: Option[String] =  None,
-  val endDate: Option[Timestamp] =  None,
   val startDate: Option[Timestamp] =  None,
+  val endDate: Option[Timestamp] =  None,
   val attributes: Map[String,String] =  HashMap.empty
 ) {
   
-  def asQlmIDType: QlmIDType = {
+  implicit def asQlmIDType: QlmIDType = {
     val idTypeAttr: Seq[(String,DataRecord[Any])] = idType.map{
           typ =>
             ("@idType" -> DataRecord(typ))
@@ -44,4 +45,14 @@ case class QlmID(
         ).toMap ++ attributesToDataRecord( attributes )
     )
   }
+  implicit def asOdfQlmID: types.OdfTypes.QlmID ={
+    types.OdfTypes.QlmID(
+      id,
+      idType,
+      tagType,
+      startDate,
+      endDate,
+      HashMap( attributes.toSeq:_* )
+    )
+  } 
 }

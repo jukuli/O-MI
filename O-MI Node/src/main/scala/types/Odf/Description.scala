@@ -1,3 +1,4 @@
+package types
 package odf
 
 import parsing.xmlGen.scalaxb.DataRecord
@@ -7,12 +8,16 @@ case class  Description(
   val language: Option[String]
 ) {
 
-  implicit def asDescription : DescriptionType ={
+  implicit def asDescriptionType : DescriptionType ={
     DescriptionType(
       text, 
       language.fold(Map.empty[String, DataRecord[Any]]){
         n=>Map( ("@lang" -> DataRecord(n)) ) 
       }
     )
+  }
+
+  implicit def asOdfDescription: types.OdfTypes.OdfDescription = {
+    types.OdfTypes.OdfDescription( text, language )
   }
 }

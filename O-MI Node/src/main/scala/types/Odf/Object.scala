@@ -1,4 +1,5 @@
-package odf 
+package types
+package odf
 
 import scala.collection.{ Seq, Map }
 import scala.collection.immutable.HashMap 
@@ -8,24 +9,19 @@ import parsing.xmlGen.xmlTypes.{InfoItemType, ObjectType}
 
 class Object(
   val id: Seq[QlmID],
-  val parentPath: Option[Path] = None,
+  val path: Path,
   val typeAttribute: Option[String] = None,
   val description: Seq[Description] = Vector.empty,
   val attributes: Map[String,String] = HashMap.empty
 ) extends Node with Unionable[Object] {
   assert( id.nonEmpty )
   def union( that: Object ): Object ={
-    val pathsMatches = ( parentPath, that.parentPath ) match {
-      case (Some(p), Some(op) ) => p == op
-      case (None, Some(op) ) => true
-      case (Some(p), None ) => true
-      case (None, None) => true 
-    }
+    val pathsMatches = path == that.path 
     val containSameId = id.map( _.id ).toSet.intersect( that.id.map( _.id).toSet ).nonEmpty
     assert( containSameId && pathsMatches)
     new Object(
       id ++ that.id,//TODO: Some kind unioning needed. If only  one has attributes and other doesn,t, we should compain them to one.
-      parentPath.orElse(that.parentPath),
+      path,
       (typeAttribute, that.typeAttribute) match {
         case (Some( t ), Some( ot ) ) =>
           if ( t == ot) Some( t ) 
@@ -38,9 +34,7 @@ class Object(
     
   }
   def createAncestors: Seq[Node] = {
-    parentPath.map{
-      case originalPath: Path =>
-        originalPath.getAncestors.map{
+    path.getAncestors.map{
           case ancestorPath: Path => 
             new Object(
               Vector(
@@ -48,10 +42,9 @@ class Object(
                   ancestorPath.last
                 )
               ),
-              Some(ancestorPath)
+              ancestorPath
             )
         }.toVector
-    }.getOrElse(Vector())
 
   }
 
@@ -62,7 +55,7 @@ class Object(
         attributes = Map.empty
       )),*/
       id.map(_.asQlmIDType), //
-      description.map( des => des.asDescription ).toSeq,
+      description.map( des => des.asDescriptionType ).toSeq,
       infoitems,
       objects,
       attributes = (attributes.map{
@@ -70,4 +63,20 @@ class Object(
       }++  typeAttribute.map{ n => ("@type" -> DataRecord(n))}).toMap
     )
   }
+  implicit def asOdfObject( 
+    infoItems: Seq[types.OdfTypes.OdfInfoItem] = Vector.empty,
+    objects: Seq[types.OdfTypes.OdfObject] = Vector.empty
+  ) : types.OdfTypes.OdfObject = {
+  
+    types.OdfTypes.OdfObject(
+      id.map( _.asOdfQlmID).toVector ,
+      types.Path(path.toSeq),
+      infoItems.toVector,
+      objects.toVector,
+      description.map( _.asOdfDescription ).headOption,
+      typeAttribute
+    )
+    
+  } 
+    
 }

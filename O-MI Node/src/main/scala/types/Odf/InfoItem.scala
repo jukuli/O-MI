@@ -1,4 +1,5 @@
-package odf 
+package types
+package odf
 
 import scala.collection.{ Seq, Map }
 import scala.collection.immutable.HashMap 
@@ -8,7 +9,7 @@ import parsing.xmlGen.xmlTypes.{InfoItemType}
 
 class InfoItem( 
   val nameAttribute: String,
-  val parentPath: Option[Path] = None,
+  val path: Path,
   val name: Seq[QlmID] = Vector.empty,
   val description: Seq[Description]= Vector.empty,
   val value: Seq[Value[Any]]= Vector.empty,
@@ -17,16 +18,11 @@ class InfoItem(
 ) extends Node with Unionable[InfoItem]{
 
   def union( that: InfoItem ): InfoItem ={
-    val pathsMatches = ( parentPath, that.parentPath ) match {
-      case (Some(p), Some(op) ) => p == op
-      case (None, Some(op) ) => true
-      case (Some(p), None ) => true
-      case (None, None) => true 
-    }
+    val pathsMatches = path == that.path
     assert( nameAttribute == that.nameAttribute && pathsMatches )
     new InfoItem(
       nameAttribute,
-      parentPath.orElse(that.parentPath),
+      path,
       name ++ that.name,
       description ++ that.description,
       value ++ that.value,
@@ -39,7 +35,7 @@ class InfoItem(
   }
   def copy(
     nameAttribute: String = this.nameAttribute,
-    parentPath: Option[Path] = this.parentPath,
+    path: Path = this.path,
     name: Seq[QlmID] = this.name,
     description: Seq[Description]= this.description,
     value: Seq[Value[Any]]= this.value,
@@ -47,7 +43,7 @@ class InfoItem(
     attributes: Map[String,String] = this.attributes
   ): InfoItem = new InfoItem(
     nameAttribute,
-    parentPath,
+    path,
     name,
     description,
     value,
@@ -55,9 +51,7 @@ class InfoItem(
     attributes
   )
   def createAncestors: Seq[Node] = {
-    parentPath.map{
-      case originalPath: Path =>
-        originalPath.getAncestors.map{
+        path.getAncestors.map{
           case ancestorPath: Path => 
             new Object(
               Vector(
@@ -65,16 +59,15 @@ class InfoItem(
                   ancestorPath.last
                 )
               ),
-              Some(ancestorPath)
+              ancestorPath
             )
         }.toVector
-    }.getOrElse(Vector())
   }
 
   implicit def asInfoItemType: InfoItemType = {
     InfoItemType(
-      description = description.map( des => des.asDescription ).toSeq,
-      MetaData = metaData.map(_.asMetaData).toSeq,
+      description = description.map( des => des.asDescriptionType ).toSeq,
+      MetaData = metaData.map(_.asMetaDataType).toSeq,
       iname = name.map{
         qlmid => qlmid.asQlmIDType
       },
@@ -87,6 +80,15 @@ class InfoItem(
           nameAttribute
         )
       } ++ attributesToDataRecord( attributes )
+    )
+  }
+
+  implicit def asOdfInfoItem: types.OdfTypes.OdfInfoItem ={
+    types.OdfTypes.OdfInfoItem(
+      types.Path( path.toSeq ),
+      value.map( _.asOdfValue ).toVector,
+      description.map( _.asOdfDescription ).headOption,
+      metaData.map( _.asOdfMetaData )
     )
   }
 }

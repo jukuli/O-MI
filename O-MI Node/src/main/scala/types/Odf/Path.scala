@@ -1,3 +1,4 @@
+package types
 package odf
 
 import scala.collection.{ Seq, Map }
@@ -54,4 +55,10 @@ object Path {
 
   implicit def PathAsSeq(p: Path): Seq[String] = p.toSeq
   implicit def SeqAsPath(s: Seq[String]): Path = Path(s.toVector)
+}
+
+object PathOrdering extends scala.math.Ordering[Path] {
+  def compare( l: Path, r: Path) : Int ={
+    l.toString compare r.toString
+  }
 }

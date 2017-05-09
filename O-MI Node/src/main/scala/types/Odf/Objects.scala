@@ -1,3 +1,4 @@
+package types
 package odf
 
 import scala.collection.{ Seq, Map }
@@ -9,7 +10,7 @@ class Objects(
   val version: Option[String] = None,
   val attributes: Map[String,String] = HashMap.empty
 ) extends Node {
-  val parentPath: Option[Path] = None
+  val path: Path = new Path( "Objects")
   def createAncestors: Seq[Node] = {
     Vector()
   }
@@ -25,6 +26,14 @@ class Objects(
       attributes = attributesToDataRecord( attributes ) ++ version.map{
         case version: String => "@version" -> DataRecord(version)
       }  
+    )
+  }
+  implicit def asOdfObjects(
+    objects: Seq[types.OdfTypes.OdfObject]
+  ) : types.OdfTypes.OdfObjects ={
+    types.OdfTypes.OdfObjects(
+      objects.toVector,
+      version
     )
   }
 }

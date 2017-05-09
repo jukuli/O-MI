@@ -1,12 +1,16 @@
-
-import parsing.xmlGen.xmlTypes
-import parsing.xmlGen.scalaxb._
+package types 
+import java.lang.{Iterable => JavaIterable}
 import java.util.GregorianCalendar
 import javax.xml.datatype.XMLGregorianCalendar
 import javax.xml.datatype.DatatypeFactory
 import java.sql.Timestamp
 
+import parsing.xmlGen.xmlTypes
+import parsing.xmlGen.scalaxb._
+import types.ParseError
+
 package object odf {
+  type OdfParseResult = Either[JavaIterable[ParseError], ODF]
   trait Unionable[T] { 
     def union(t: T): T 
   }
@@ -16,7 +20,8 @@ package object odf {
    DatatypeFactory.newInstance().newXMLGregorianCalendar(cal)
  }
 
- def attributesToDataRecord( attributes: scala.collection.Map[String,String] ): Map[String,DataRecord[String]] ={
+ def attributesToDataRecord( 
+  attributes: scala.collection.Map[String,String] ): Map[String,DataRecord[String]] ={
    attributes.map{
       case ( key: String, value: String ) =>
         if( key.startsWith("@") ) key -> DataRecord(value)
