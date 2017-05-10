@@ -17,7 +17,4 @@ case class  Description(
     )
   }
 
-  implicit def asOdfDescription: types.OdfTypes.OdfDescription = {
-    types.OdfTypes.OdfDescription( text, language )
-  }
 }

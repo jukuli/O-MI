@@ -7,7 +7,7 @@ import scala.collection.immutable.HashMap
 import parsing.xmlGen.scalaxb.DataRecord
 import parsing.xmlGen.xmlTypes.{InfoItemType}
 
-class InfoItem( 
+case class InfoItem( 
   val nameAttribute: String,
   val path: Path,
   val name: Seq[QlmID] = Vector.empty,
@@ -63,6 +63,21 @@ class InfoItem(
             )
         }.toVector
   }
+  def createParent: Node = {
+    val parentPath = path.init
+    if( parentPath == new Path( "Objects") ){
+      new Objects()
+    } else {
+      new Object(
+        Vector(
+          new QlmID(
+            parentPath.last
+          )
+        ),
+        parentPath
+      )
+    }
+  }
 
   implicit def asInfoItemType: InfoItemType = {
     InfoItemType(
@@ -83,12 +98,4 @@ class InfoItem(
     )
   }
 
-  implicit def asOdfInfoItem: types.OdfTypes.OdfInfoItem ={
-    types.OdfTypes.OdfInfoItem(
-      types.Path( path.toSeq ),
-      value.map( _.asOdfValue ).toVector,
-      description.map( _.asOdfDescription ).headOption,
-      metaData.map( _.asOdfMetaData )
-    )
-  }
 }

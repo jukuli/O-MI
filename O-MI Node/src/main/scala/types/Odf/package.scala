@@ -5,12 +5,17 @@ import javax.xml.datatype.XMLGregorianCalendar
 import javax.xml.datatype.DatatypeFactory
 import java.sql.Timestamp
 
+import scala.collection.immutable.{ 
+  HashMap => ImmutableHashMap,
+  TreeSet => ImmutableTreeSet
+}
+
 import parsing.xmlGen.xmlTypes
 import parsing.xmlGen.scalaxb._
 import types.ParseError
 
 package object odf {
-  type OdfParseResult = Either[JavaIterable[ParseError], ODF]
+  type OdfParseResult = Either[JavaIterable[ParseError], ImmutableODF]
   trait Unionable[T] { 
     def union(t: T): T 
   }

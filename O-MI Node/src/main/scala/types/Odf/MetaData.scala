@@ -4,7 +4,7 @@ package odf
 import scala.collection.{ Seq, Map }
 import parsing.xmlGen.xmlTypes.MetaDataType
 
-class MetaData(
+case class MetaData(
   val infoItems: Set[InfoItem]
 ) extends Unionable[MetaData] {
   lazy val nameToII: Map[String, InfoItem] = infoItems.map{ ii => ii.nameAttribute ->ii }.toMap
@@ -31,7 +31,4 @@ class MetaData(
     )
   }
   implicit def asMetaDataType : MetaDataType = MetaDataType( infoItems.map(_.asInfoItemType ).toSeq )
-  implicit def asOdfMetaData: types.OdfTypes.OdfMetaData = {
-    types.OdfTypes.OdfMetaData( infoItems.map( _.asOdfInfoItem ).toVector )
-  }
 }

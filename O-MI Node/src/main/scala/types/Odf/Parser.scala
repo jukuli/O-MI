@@ -137,19 +137,16 @@ object ODFParser extends parsing.Parser[OdfParseResult] {
   private[this] def parseObjects(
     objects: ObjectsType,
     requestProcessTime: Timestamp
-  ): ODF = {
+  ): ImmutableODF = {
     val path = new Path("Objects")
     val objs = new Objects(
       objects.version, 
       parseAttributes(objects.attributes - "@version")    
     )
-    val subtree: Vector[(Path, Node)] = objects.ObjectValue.flatMap{ 
+    val subtree: Vector[Node] = objects.ObjectValue.flatMap{ 
       obj => parseObject( requestProcessTime, obj, path ) 
     }.toVector
-    val hmap: HashMap[Path,Node] = HashMap(
-      (Vector(path ->objs) ++ subtree):_*
-      )
-    ODF(hmap)
+    ImmutableODF(Vector(objs) ++ subtree )
   }
 
   private[this] def validateId(
@@ -171,7 +168,7 @@ object ODFParser extends parsing.Parser[OdfParseResult] {
     requestProcessTime: Timestamp,
     obj: ObjectType,
     path: Path = Path("Objects")
-  ) : Vector[(Path,Node)] = { 
+  ) : Vector[Node] = { 
 
     val npath = path / validateId(obj.id.headOption.map(_.value)).getOrElse(
       throw new IllegalArgumentException("No <id> on object: " + obj.id.toString)
@@ -184,20 +181,20 @@ object ODFParser extends parsing.Parser[OdfParseResult] {
       obj.description.map{ des => new Description( des.value, des.lang )}.toVector,
       parseAttributes(obj.attributes - "@type")    
     ) 
-    val iIs: Vector[(Path,InfoItem)] = obj.InfoItem.flatMap{ 
+    val iIs: Vector[InfoItem] = obj.InfoItem.map{ 
       item => parseInfoItem( requestProcessTime, item, npath ) 
     }.toVector
-    val subtree: Vector[(Path,Node)] =  obj.ObjectValue.flatMap{ 
+    val subtree: Vector[Node] =  obj.ObjectValue.flatMap{ 
       child => parseObject( requestProcessTime, child, npath ) 
     }.toVector
-    iIs ++ subtree ++ Vector( npath -> odfObj)
+    iIs ++ subtree ++ Vector( odfObj )
   }
   
   private[this] def parseInfoItem(
     requestProcessTime: Timestamp,
     item: InfoItemType,
     path: Path
-  ) : Vector[(Path, InfoItem)]  = { 
+  ) : InfoItem  = { 
 
     // TODO: support many names from item.otherName
     val npath = path / validateId(item.name).getOrElse(
@@ -220,15 +217,13 @@ object ODFParser extends parsing.Parser[OdfParseResult] {
       item.MetaData.map{
         md => 
           new MetaData(
-            md.InfoItem.flatMap{ 
+            md.InfoItem.map{ 
               mItem => parseInfoItem( requestProcessTime, mItem, npath / "MetaData" ) 
-            }.map{
-              case (path, iI ) => iI
             }.toSet
           )
       }.headOption
     ) 
-    Vector(npath -> ii)
+    ii
   }
 
   private[this] def parseValue(requestProcessTime: Timestamp, valueType: ValueType) = { 

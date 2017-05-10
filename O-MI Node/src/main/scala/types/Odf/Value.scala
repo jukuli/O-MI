@@ -37,11 +37,11 @@ trait Value[+V]{
 }
 
 case class ODFValue(
-  val value: ODF,
+  val value: ImmutableODF,
   val timestamp: Timestamp,
   val attributes: Map[String,String]
-) extends Value[ODF] {
-  final val typeAttribute: String = "odf"
+) extends Value[ImmutableODF] {
+  final val typeAttribute: String = "odf:Objects"
   def valueAsDataRecord = DataRecord(None, Some("Objects"),value.asObjectsType)
 }
 
@@ -124,7 +124,8 @@ object Value{
     attributes: Map[String, String]
   ) : Value[Any] = {
     value match {
-      case odf: ODF => ODFValue(odf, timestamp, attributes)
+      case odf: ODF[scala.collection.Map[Path,Node],scala.collection.SortedSet[Path]] => 
+        ODFValue(odf.immutable, timestamp, attributes)
       case s: Short => ShortValue(s, timestamp, attributes)
       case i: Int   => IntValue(i, timestamp, attributes)
       case l: Long  => LongValue(l, timestamp, attributes)
@@ -141,6 +142,25 @@ object Value{
   ) : Value[Any] = apply(value,timestamp,HashMap.empty[String,String])
   
   def apply(
+    value: Any,
+    typeValue: String,
+    timestamp: Timestamp,
+    attributes: Map[String, String] = HashMap.empty
+  ) : Value[Any] = {
+    value match {
+      case odf: ODF[scala.collection.Map[Path,Node],scala.collection.SortedSet[Path]] => 
+        ODFValue(odf.immutable, timestamp, attributes)
+      case s: Short => ShortValue(s, timestamp, attributes)
+      case i: Int   => IntValue(i, timestamp, attributes)
+      case l: Long  => LongValue(l, timestamp, attributes)
+      case f: Float => FloatValue(f, timestamp, attributes)
+      case d: Double => DoubleValue(d, timestamp, attributes)
+      case b: Boolean => BooleanValue(b, timestamp, attributes)
+      case s: String => applyFromString( s, typeValue, timestamp, attributes ) 
+      case a: Any => StringPresentedValue(a.toString, timestamp, typeValue,attributes = attributes)
+    }
+  }
+  def applyFromString(
     value: String,
     typeValue: String,
     timestamp: Timestamp,

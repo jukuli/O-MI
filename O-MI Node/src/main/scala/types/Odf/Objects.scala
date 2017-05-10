@@ -6,11 +6,14 @@ import scala.collection.immutable.HashMap
 import parsing.xmlGen.scalaxb.DataRecord
 import parsing.xmlGen.xmlTypes.{ObjectsType, ObjectType}
 
-class Objects(
+case class Objects(
   val version: Option[String] = None,
   val attributes: Map[String,String] = HashMap.empty
 ) extends Node {
   val path: Path = new Path( "Objects")
+  def createParent: Node = {
+    this
+  }
   def createAncestors: Seq[Node] = {
     Vector()
   }
@@ -26,14 +29,6 @@ class Objects(
       attributes = attributesToDataRecord( attributes ) ++ version.map{
         case version: String => "@version" -> DataRecord(version)
       }  
-    )
-  }
-  implicit def asOdfObjects(
-    objects: Seq[types.OdfTypes.OdfObject]
-  ) : types.OdfTypes.OdfObjects ={
-    types.OdfTypes.OdfObjects(
-      objects.toVector,
-      version
     )
   }
 }

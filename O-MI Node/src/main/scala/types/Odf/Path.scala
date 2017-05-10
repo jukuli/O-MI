@@ -3,7 +3,7 @@ package odf
 
 import scala.collection.{ Seq, Map }
 
-class Path(
+case class Path(
   val path: collection.immutable.Seq[String]
   ) {
     import Path._
@@ -34,6 +34,7 @@ class Path(
 
   def getAncestorsAndSelf: Seq[Path] = path.inits.map( Path(_) ).toVector ++ Vector(this)
   def getAncestors: Seq[Path] = path.inits.map( Path(_) ).toVector
+  def getParent: Path = Path(path.init)
   def length: Int = path.length
   override def toString: String = path.mkString("/")
   override lazy val hashCode: Int = this.toSeq.hashCode
