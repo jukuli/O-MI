@@ -16,8 +16,16 @@ object OldTypeConverter{
     ImmutableODF( Vector(objects) ++ objs )
   }
   def convertOdfObject( odfObject: OdfObject ): Seq[Node] ={
+    var ids =odfObject.id.map{ id => convertOdfQlmID( id ) }
+    if( !ids.map{_.id}.toSet.contains(odfObject.path.last) ){
+      
+      ids= ids ++ Vector( QlmID(
+      odfObject.path.last
+       ) )
+
+    }
     val obj = Object(
-      odfObject.id.map{ id => convertOdfQlmID( id ) },
+      ids,
       convertPath( odfObject.path ),
       odfObject.typeValue,
       odfObject.description.map{

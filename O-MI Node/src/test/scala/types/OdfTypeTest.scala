@@ -9,6 +9,8 @@ import org.specs2.matcher._
 import org.specs2.matcher.XmlMatchers._
 
 import org.specs2._
+import types.OdfTypes._
+import types.OdfTypes.{QlmID =>OdfQlmID}
 
 class OdfTypesTest extends mutable.Specification{
   val testTime : Timestamp = Timestamp.valueOf("2017-05-11 15:44:55")
@@ -31,6 +33,38 @@ class OdfTypesTest extends mutable.Specification{
     val o_df = ImmutableODF( testingNodes )
     "should parse correctly XML created from ODF to equal ODF" in fromXMLTest(o_df) 
   } 
+  "Converters" should {
+    "convert from old to new and back to old and stay the same" in repeatedOldConvertTest
+    "convert from new to old and back to new and stay the same" in repeatedNewConvertTest
+  }
+  def  repeatedNewConvertTest ={
+    val newType = ImmutableODF( testingNodes )
+    val oldType = NewTypeConverter.convertODF( newType )
+    val backToNew = OldTypeConverter.convertOdfObjects( oldType )
+    backToNew must be( newType )
+  }
+
+
+  def  repeatedOldConvertTest ={
+    val oldType : OdfObjects = parsing.OdfParser.parse( testingNodesAsXML.toString ) match {
+      case Right( o ) => o
+      case Left( errors ) =>
+        println( errors )
+        throw new Exception("Parsing failed!")
+    }
+    val newType = OldTypeConverter.convertOdfObjects(oldType) 
+    val backToOld = NewTypeConverter.convertODF(newType)
+    val p = new scala.xml.PrettyPrinter(120, 4)
+    backToOld.asXML showAs{
+      case ns => 
+        "Original:\n\n" + p.format(oldType.asXML.head) + "\n\n" ++
+        "Converted:\n\n" + p.format(ns.head) + "\n"
+      
+    } must beEqualToIgnoringSpace(
+      oldType.asXML     
+    )
+  }
+
   def createCorrect[M<:scala.collection.Map[Path,Node],S <: scala.collection.SortedSet[Path]](
     o_df: ODF[M,S]
   ) = {
@@ -157,8 +191,8 @@ class OdfTypesTest extends mutable.Specification{
       <Object>
         <id>ObjectC</id>
         <Object type="TestingType">
-          <name idType="TestID" tagType="TestTag">ObjectCC</name>
-          <name idType="TestID" tagType="TestTag">OCC</name>
+          <id idType="TestID" tagType="TestTag">ObjectCC</id>
+          <id idType="TestID" tagType="TestTag">OCC</id>
           <description lang="English">Testing</description>
           <description lang="Finnish">Testaus</description>
         </Object>
@@ -166,15 +200,17 @@ class OdfTypesTest extends mutable.Specification{
     </Objects>
   }
 
-  def testingNodes: Seq[Node] = Vector(
+  def testingNodes: Vector[Node] = Vector(
       InfoItem( 
         "II1",
-        Path("Objects/ObjectA/II1")
+        Path("Objects/ObjectA/II1"),
+        Vector( QlmID( "II1" ))
       ),
       InfoItem( 
         "II2",
         Path("Objects/ObjectA/II2"),
         Vector(
+          QlmID( "II2" ),
           QlmID(
             "II2O1",
             Some("TestID"),
@@ -196,17 +232,20 @@ class OdfTypesTest extends mutable.Specification{
           Vector(
           InfoItem( 
             "A",
-            Path("Objects/ObjectA/II2/MetaData/A")
+            Path("Objects/ObjectA/II2/MetaData/A"),
+            Vector( QlmID( "A" ))
           ),
           InfoItem( 
             "B",
-            Path("Objects/ObjectA/II2/MetaData/B")
+            Path("Objects/ObjectA/II2/MetaData/B"),
+            Vector( QlmID( "B" ))
           ))
         ))
       ),
       InfoItem( 
         "II1",
-        Path("Objects/ObjectB/ObjectB/II1")
+        Path("Objects/ObjectB/ObjectB/II1"),
+        Vector( QlmID( "II1" ))
       ),
       Object(
         Vector(
@@ -241,4 +280,69 @@ class OdfTypesTest extends mutable.Specification{
     )
   )
 
+  val oldodf: OdfObjects = {
+    /*Right(
+      Vector(
+        WriteRequest(
+          10.0, */ OdfObjects(
+      Vector(
+        OdfObject(
+        Vector(),
+          types.Path("Objects/SmartHouse"), Vector(
+            OdfInfoItem(
+              types.Path("Objects/SmartHouse/PowerConsumption"), Vector(
+                OdfValue(
+                  "180", "xs:string",
+                    Timestamp.valueOf("2014-12-18 15:34:52"))), None, None), OdfInfoItem(
+              types.Path("Objects/SmartHouse/Moisture"), Vector(
+                OdfValue(
+                  "0.20", "xs:string",
+                    new Timestamp(1418916892L * 1000))), None, None)), Vector(
+            OdfObject(
+            Vector(),
+              types.Path("Objects/SmartHouse/SmartFridge"), Vector(
+                OdfInfoItem(
+                  types.Path("Objects/SmartHouse/SmartFridge/PowerConsumption"), Vector(
+                    OdfValue(
+                      "56", "xs:string",
+                        Timestamp.valueOf("2014-12-18 15:34:52"))), None, None)), Vector(), None, None), OdfObject(
+            Vector(),
+              types.Path("Objects/SmartHouse/SmartOven"), Vector(
+                OdfInfoItem(
+                  types.Path("Objects/SmartHouse/SmartOven/PowerOn"), Vector(
+                    OdfValue(
+                      "1", "xs:string",
+                        Timestamp.valueOf("2014-12-18 15:34:52"))), None, None)), Vector(), None, None)), None, None), OdfObject(
+        Vector(),
+          types.Path("Objects/SmartCar"), Vector(
+            OdfInfoItem(
+              types.Path("Objects/SmartCar/Fuel"),
+              Vector(OdfValue(
+                  "30",
+                  "xs:string",
+                  Timestamp.valueOf("2014-12-18 15:34:52")
+              )), 
+              None, 
+              Some(OdfMetaData(
+                Vector(OdfInfoItem(
+                  types.Path("Objects/SmartCar/Fuel/MetaData/Units"),
+                  Vector(OdfValue(
+                    "Litre",
+                    "xs:string",
+                    Timestamp.valueOf("2014-12-18 15:34:52")
+                  ))
+                ))
+              ))
+            )),
+          Vector(), None, None), OdfObject(
+        Vector(),
+          types.Path("Objects/SmartCottage"), Vector(), Vector(
+            OdfObject(
+            Vector(),
+              types.Path("Objects/SmartCottage/Heater"), Vector(), Vector(), None, None), OdfObject(
+            Vector(),
+              types.Path("Objects/SmartCottage/Sauna"), Vector(), Vector(), None, None), OdfObject(
+            Vector(),
+              types.Path("Objects/SmartCottage/Weather"), Vector(), Vector(), None, None)), None, None)), None)
+  }
 }

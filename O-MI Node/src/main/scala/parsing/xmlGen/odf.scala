@@ -23,7 +23,8 @@ case class ObjectType(id: Seq[xmlTypes.QlmIDType] = Vector.empty,
       
 
 
-case class InfoItemType(iname: Seq[xmlTypes.QlmIDType] = Vector.empty,
+case class InfoItemType(
+  iname: Seq[xmlTypes.QlmIDType] = Vector.empty,
   description: Seq[xmlTypes.DescriptionType] = Vector.empty,
   MetaData: Seq[xmlTypes.MetaDataType] = Vector.empty,
   value: Seq[xmlTypes.ValueType] = Vector.empty,

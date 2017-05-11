@@ -6,8 +6,8 @@ import types.OdfTypes._
 import types.OdfTypes.{QlmID => OdfQlmID }
 
 object NewTypeConverter{
-  def convertODF(
-    o_df: ODF[scala.collection.Map[Path,Node],scala.collection.SortedSet[Path] ] 
+  def convertODF[M <: scala.collection.Map[Path,Node], S <: scala.collection.SortedSet[Path]](
+    o_df: ODF[M,S] 
   ) : OdfObjects ={
     val firstLevelObjects= o_df.getChilds( new Path("Objects") )
     val odfObjects= firstLevelObjects.map{
@@ -22,7 +22,8 @@ object NewTypeConverter{
     }
   }
 
-  def createOdfObject( obj: Object, o_df: ODF[scala.collection.Map[Path,Node],scala.collection.SortedSet[Path] ] ): OdfObject ={
+  def createOdfObject[M <: scala.collection.Map[Path,Node], S <: scala.collection.SortedSet[Path]]
+  ( obj: Object, o_df: ODF[M,S] ): OdfObject ={
     val (objects, infoItems ) = o_df.getChilds( obj.path ).partition{
       case obj: Object => true
       case ii: InfoItem => false
@@ -51,8 +52,12 @@ object NewTypeConverter{
     infoItems: Seq[OdfInfoItem] = Vector.empty,
     objects: Seq[OdfObject] = Vector.empty
   ) : OdfObject = {
+    var ids = obj.id.map( convertQlmID(_)).toVector 
+    if( !ids.contains(obj.path.last ) ){
+      ids = ids ++ Vector( OdfQlmID(obj.path.last) )
+    }
     OdfObject(
-      obj.id.map( _.asOdfQlmID).toVector ,
+      ids,
       types.Path(obj.path.toSeq),
       infoItems.toVector,
       objects.toVector,
