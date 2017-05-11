@@ -9,19 +9,11 @@ import parsing.xmlGen.xmlTypes.{ObjectsType, ObjectType}
 import parsing.xmlGen.{odfDefaultScope, scalaxb, defaultScope}
 
 case class ImmutableODF private[odf] (
-  _nodes: Seq[Node]  = Vector.empty
+
+  protected[odf] val nodes: ImmutableHashMap[Path,Node] 
 ) extends ODF[ImmutableHashMap[Path,Node],ImmutableTreeSet[Path]] {
   type M = ImmutableHashMap[Path,Node]
   type S = ImmutableTreeSet[Path]
-  protected[odf] val nodes: ImmutableHashMap[Path,Node] = {
-    val tmpMutable = new MutableODF()
-    val sorted = _nodes.sortBy( _.path)(PathOrdering)
-    sorted.foreach{
-      case node: Node =>
-        tmpMutable.add( node )
-    }
-    ImmutableHashMap(tmpMutable.nodes.toSeq:_*)
-  }
   protected[odf] val paths: ImmutableTreeSet[Path] = ImmutableTreeSet( nodes.keys.toSeq:_* )(PathOrdering)
 
   def union( that: ODF[M,S]): ODF[M,S] = {
@@ -58,25 +50,79 @@ case class ImmutableODF private[odf] (
     )
   }
 
-  def removePaths( removedPaths: Iterable[Path]) : ODF[M,S] = {
-    this.mutable.removePaths( removedPaths ).immutable
+  def removePaths( pathsToRemove: Iterable[Path]) : ODF[M,S] = {
+    val subTrees = pathsToRemove.flatMap{ p => getSubTreePaths(p) }.toSet
+    this.copy( nodes --( subTrees ) )
   }
   
   def removePath( path: Path) : ODF[M,S] ={
-    this.mutable.removePath( path ).immutable
+    val subtreeP = getSubTreePaths( path )
+    this.copy( nodes --( subtreeP ) )
   }
 
   def add( node: Node ) : ODF[M,S] ={
-    this.mutable.add( node ).immutable
+    
+    val newNodes: ImmutableHashMap[Path,Node] = if( nodes.contains( node.path ) ){
+      (nodes.get(node.path), node ) match{
+        case (Some(old:Object), obj: Object ) =>
+          nodes.updated( node.path,  old.union(obj) )
+        case (Some(old:Objects), objs: Objects ) =>
+          nodes.updated( node.path,  old.union(objs) )
+        case (Some(old:InfoItem), iI: InfoItem ) => 
+          nodes.updated( node.path,  old.union(iI) )
+        case (old, n ) => 
+          throw new Exception(
+            "Found two different types in same Path when tried to add a new node" 
+          )
+      }
+    } else {
+      val mutableHMap : MutableHashMap[Path,Node] = MutableHashMap(nodes.toVector:_*)
+      var toAdd = node
+      while( !mutableHMap.contains(toAdd.path) ){
+        mutableHMap += toAdd.path -> toAdd
+        toAdd = toAdd.createParent
+      }
+      ImmutableHashMap( mutableHMap.toVector:_*)
+    }
+    this.copy( newNodes )
   }
 
-  def immutable: ImmutableODF = this
-  def mutable: MutableODF = new MutableODF( 
+  def immutable: ImmutableODF = this.copy()
+  def mutable: MutableODF = MutableODF( 
       nodes.values.toVector
   )
 
   def addNodes( nodesToAdd: Seq[Node] ) : ODF[M,S] ={
-    this.mutable.addNodes( nodesToAdd).immutable
+    val mutableHMap : MutableHashMap[Path,Node] = MutableHashMap(nodes.toVector:_*)
+    val sorted = nodesToAdd.sortBy( _.path)(PathOrdering)
+    sorted.foreach{
+      case node: Node =>
+        if( mutableHMap.contains( node.path ) ){
+            (node, mutableHMap.get(node.path) ) match{
+              case (  ii: InfoItem , Some(oii: InfoItem) ) => 
+                mutableHMap(ii.path) = ii.union(oii) 
+              case ( obj: Object ,  Some(oo: Object) ) =>
+                mutableHMap(obj.path) = obj.union( oo ) 
+              case ( obj: Objects , Some( oo: Objects) ) =>
+                mutableHMap(obj.path) = obj.union( oo ) 
+              case ( n, on) => 
+                throw new Exception( 
+                  "Found two different types for same Path when tried to create ImmutableODF." 
+                )
+            }
+        } else {
+          var toAdd = node
+          while( !mutableHMap.contains(toAdd.path) ){
+            mutableHMap += toAdd.path -> toAdd
+            toAdd = toAdd.createParent
+          }
+        }
+    }
+    this.copy(
+      ImmutableHashMap(
+        mutableHMap.toVector:_*
+      )
+    )
   }
   def getSubTreeAsODF( path: Path): ODF[M,S] = {
     val subtree: Seq[Node] = getSubTree( path)
@@ -85,6 +131,43 @@ case class ImmutableODF private[odf] (
     }
     ImmutableODF(
         (subtree ++ ancestors).toVector
+    )
+  }
+}
+
+object ImmutableODF{
+  def apply(
+      _nodes: Seq[Node]  = Vector.empty
+  ) : ImmutableODF ={
+    val mutableHMap : MutableHashMap[Path,Node] = MutableHashMap.empty
+    val sorted = _nodes.sortBy( _.path)(PathOrdering)
+    sorted.foreach{
+      case node: Node =>
+        if( mutableHMap.contains( node.path ) ){
+            (node, mutableHMap.get(node.path) ) match{
+              case (  ii: InfoItem , Some(oii: InfoItem) ) => 
+                mutableHMap(ii.path) = ii.union(oii) 
+              case ( obj: Object ,  Some(oo: Object) ) =>
+                mutableHMap(obj.path) = obj.union( oo ) 
+              case ( obj: Objects , Some( oo: Objects) ) =>
+                mutableHMap(obj.path) = obj.union( oo ) 
+              case ( n, on) => 
+                throw new Exception( 
+                  "Found two different types for same Path when tried to create ImmutableODF." 
+                )
+            }
+        } else {
+          var toAdd = node
+          while( !mutableHMap.contains(toAdd.path) ){
+            mutableHMap += toAdd.path -> toAdd
+            toAdd = toAdd.createParent
+          }
+        }
+    }
+    new ImmutableODF(
+      ImmutableHashMap(
+        mutableHMap.toVector:_*
+      )
     )
   }
 }

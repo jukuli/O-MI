@@ -1,11 +1,11 @@
 package types
 package odf
 
-import scala.collection.{ Seq, Map }
+import scala.collection.immutable.{ Set, HashSet }
 import parsing.xmlGen.xmlTypes.MetaDataType
 
 case class MetaData(
-  val infoItems: Set[InfoItem]
+  val infoItems: Vector[InfoItem] = Vector.empty 
 ) extends Unionable[MetaData] {
   lazy val nameToII: Map[String, InfoItem] = infoItems.map{ ii => ii.nameAttribute ->ii }.toMap
   lazy val names: Set[String] = infoItems.map{ ii => ii.nameAttribute }.toSet
@@ -20,14 +20,14 @@ case class MetaData(
         }
     }
     new MetaData( 
-      (names -- intersectingNames).flatMap{
+      ((names -- intersectingNames).flatMap{
         case name: String => 
           nameToII.get(name)
       } ++
       (that.names -- intersectingNames).flatMap{
         case name: String => 
           that.nameToII.get(name)
-      } ++ intersectedII
+      } ++ intersectedII).toVector
     )
   }
   implicit def asMetaDataType : MetaDataType = MetaDataType( infoItems.map(_.asInfoItemType ).toSeq )

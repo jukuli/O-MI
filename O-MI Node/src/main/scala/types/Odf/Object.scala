@@ -2,19 +2,22 @@ package types
 package odf
 
 import scala.collection.{ Seq, Map }
-import scala.collection.immutable.HashMap 
+import scala.collection.immutable.{ HashMap, Map =>IMap}
 
 import parsing.xmlGen.scalaxb.DataRecord
 import parsing.xmlGen.xmlTypes.{InfoItemType, ObjectType}
 
 case class Object(
-  val id: Seq[QlmID],
+  val id: Vector[QlmID],
   val path: Path,
   val typeAttribute: Option[String] = None,
   val description: Seq[Description] = Vector.empty,
-  val attributes: Map[String,String] = HashMap.empty
+  val attributes: IMap[String,String] = HashMap.empty
 ) extends Node with Unionable[Object] {
   assert( id.nonEmpty )
+  assert( path.length >= 2 )
+  assert( id.map(_.id).toSet.contains(path.last) )
+
   def union( that: Object ): Object ={
     val pathsMatches = path == that.path 
     val containSameId = id.map( _.id ).toSet.intersect( that.id.map( _.id).toSet ).nonEmpty
@@ -47,13 +50,13 @@ case class Object(
         }.toVector
   }
   def createParent: Node = {
-    val parentPath = path.init
-    if( parentPath == new Path( "Objects") ){
+    val parentPath = path.getParent
+    if( parentPath.isEmpty || parentPath == Path( "Objects") ){
       new Objects()
     } else {
       new Object(
         Vector(
-          new QlmID(
+          QlmID(
             parentPath.last
           )
         ),
@@ -72,9 +75,8 @@ case class Object(
       description.map( des => des.asDescriptionType ).toSeq,
       infoitems,
       objects,
-      attributes = (attributes.map{
-        case ( key, value ) => s"@$key" -> DataRecord(value) 
-      }++  typeAttribute.map{ n => ("@type" -> DataRecord(n))}).toMap
+      attributes = (
+       attributesToDataRecord(attributes) ++  typeAttribute.map{ n => ("@type" -> DataRecord(n))}).toMap
     )
   }
     

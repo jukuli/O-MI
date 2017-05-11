@@ -29,8 +29,9 @@ package object odf {
   attributes: scala.collection.Map[String,String] ): Map[String,DataRecord[String]] ={
    attributes.map{
       case ( key: String, value: String ) =>
-        if( key.startsWith("@") ) key -> DataRecord(value)
-        else  s"@$key" -> DataRecord(value)
+        if( key.startsWith("@") ){
+          key -> DataRecord(None,Some(key),value)
+        }else{  key -> DataRecord(None,Some(s"$key"),value) }
    }.toMap
  }
 }

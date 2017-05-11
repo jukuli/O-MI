@@ -90,7 +90,7 @@ object OldTypeConverter{
     MetaData(
       odfMD.infoItems.map{
         ii => convertOdfInfoItem( ii )
-      }.toSet
+      }.toVector
     )
   }
 }

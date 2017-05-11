@@ -28,12 +28,12 @@ trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[P
   def removePaths( removedPaths: Iterable[Path]) : ODF[M,S]  
   def immutable: ImmutableODF
   def mutable: MutableODF
-  def getInfoItems: Map[Path,InfoItem] = nodes.collect{ 
-    case (p: Path, ii: InfoItem) => p -> ii
-  }
-  def getObjects: Map[Path,Object] = nodes.collect{ 
-    case (p: Path, obj: Object) => p -> obj
-  }
+  def getInfoItems: Seq[InfoItem] = nodes.collect{ 
+    case (p: Path, ii: InfoItem) => ii
+  }.toVector
+  def getObjects: Seq[Object] = nodes.collect{ 
+    case (p: Path, obj: Object) => obj
+  }.toVector
   def get( path: Path): Option[Node] = nodes.get(path)
   def getSubTreePaths( path: Path): Seq[Path] = {
       paths
@@ -42,6 +42,11 @@ trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[P
         .toVector
   }
   
+  def getPaths: Seq[Path] = paths.toVector
+  def getNodes: Seq[Node] = nodes.values.toVector
+  def getNodesMap: Map[Path,Node] = ImmutableHashMap(
+    nodes.toVector:_*
+  )
   def getChildPaths( path: Path): Seq[Path] = {
     getSubTreePaths(path).filter{ 
       case p: Path => path.isParentOf(p) 
@@ -95,6 +100,20 @@ trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[P
   implicit def asXML : NodeSeq= {
     val xml  = scalaxb.toXML[ObjectsType](asObjectsType, None, Some("Objects"), odfDefaultScope)
     xml//.asInstanceOf[Elem] % new UnprefixedAttribute("xmlns","odf.xsd", Node.NoAttributes)
+  }
+  override def toString: String ={
+    "ODF{\n" +
+    nodes.map{
+      case (p, node) => 
+        s"$p --> $node" 
+    }.mkString("\n") + "\n}"
+  }
+  override def equals( that: Any ) : Boolean ={
+    that match{
+      case another: ODF[M,S] =>
+        (paths equals another.paths) && (nodes equals another.nodes)
+      case _ => false
+    }
   }
 }
 

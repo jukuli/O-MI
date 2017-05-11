@@ -80,7 +80,7 @@ object ODFParser extends parsing.Parser[OdfParseResult] {
   private def parseTry(parsed: Try[Elem], user: Option[UserInfo] = None): OdfParseResult = {
     parsed match {
       case Success(root) => parse(root)
-      case Failure(f) => Left(Iterable(ScalaXMLError(f.getMessage)))
+      case Failure(f) => Left(Vector(ScalaXMLError(f.getMessage)))
     }
   }
 
@@ -105,7 +105,7 @@ object ODFParser extends parsing.Parser[OdfParseResult] {
         case Failure(e) => 
             println( s"Exception: $e\nStackTrace:\n")
             e.printStackTrace
-            Left( Iterable( ScalaxbError( e.getMessage ) ) )
+            Left( Vector( ScalaxbError( e.getMessage ) ) )
       
         case Success(objects) => 
           Try{
@@ -115,7 +115,7 @@ object ODFParser extends parsing.Parser[OdfParseResult] {
             case Failure(e) => 
             println( s"Exception: $e\nStackTrace:\n")
             e.printStackTrace
-              Left( Iterable( ODFParserError( e.getMessage ) ) )
+              Left( Vector( ODFParserError( e.getMessage ) ) )
           }
       }
     }
@@ -175,7 +175,7 @@ object ODFParser extends parsing.Parser[OdfParseResult] {
     )
 
     val odfObj = new Object(
-      obj.id.map{ qlmIdType => parseQlmID(qlmIdType)},
+      obj.id.map{ qlmIdType => parseQlmID(qlmIdType)}.toVector,
       npath, 
       obj.typeValue,
       obj.description.map{ des => new Description( des.value, des.lang )}.toVector,
@@ -206,20 +206,20 @@ object ODFParser extends parsing.Parser[OdfParseResult] {
       npath,
       item.iname.map{
         qlmIdType => parseQlmID( qlmIdType)
-      },
+      }.toVector,
       item.description.map{ des =>
         Description( des.value, des.lang ) 
       }.toVector,
       item.value.map{
         valueType => 
           parseValue(requestProcessTime,valueType)
-      },
+      }.toVector,
       item.MetaData.map{
         md => 
           new MetaData(
             md.InfoItem.map{ 
               mItem => parseInfoItem( requestProcessTime, mItem, npath / "MetaData" ) 
-            }.toSet
+            }.toVector
           )
       }.headOption
     ) 

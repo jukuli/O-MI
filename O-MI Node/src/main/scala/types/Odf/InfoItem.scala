@@ -2,20 +2,21 @@ package types
 package odf
 
 import scala.collection.{ Seq, Map }
-import scala.collection.immutable.HashMap 
+import scala.collection.immutable.{ HashMap, Map =>IMap}
 
 import parsing.xmlGen.scalaxb.DataRecord
-import parsing.xmlGen.xmlTypes.{InfoItemType}
+import parsing.xmlGen.xmlTypes.InfoItemType
 
 case class InfoItem( 
   val nameAttribute: String,
   val path: Path,
-  val name: Seq[QlmID] = Vector.empty,
-  val description: Seq[Description]= Vector.empty,
-  val value: Seq[Value[Any]]= Vector.empty,
+  val name: Vector[QlmID] = Vector.empty,
+  val description: Vector[Description]= Vector.empty,
+  val value: Vector[Value[Any]]= Vector.empty,
   val metaData: Option[MetaData] = None,
-  val attributes: Map[String,String] = HashMap.empty
+  val attributes: IMap[String,String] = HashMap.empty
 ) extends Node with Unionable[InfoItem]{
+  assert( nameAttribute == path.last )
 
   def union( that: InfoItem ): InfoItem ={
     val pathsMatches = path == that.path
@@ -36,11 +37,11 @@ case class InfoItem(
   def copy(
     nameAttribute: String = this.nameAttribute,
     path: Path = this.path,
-    name: Seq[QlmID] = this.name,
-    description: Seq[Description]= this.description,
-    value: Seq[Value[Any]]= this.value,
+    name: Vector[QlmID] = this.name,
+    description: Vector[Description]= this.description,
+    value: Vector[Value[Any]]= this.value,
     metaData: Option[MetaData] = this.metaData,
-    attributes: Map[String,String] = this.attributes
+    attributes: IMap[String,String] = this.attributes
   ): InfoItem = new InfoItem(
     nameAttribute,
     path,
@@ -79,22 +80,26 @@ case class InfoItem(
     }
   }
 
-  implicit def asInfoItemType: InfoItemType = {
+  def asInfoItemType: InfoItemType = {
+    println( description )
     InfoItemType(
-      description = description.map( des => des.asDescriptionType ).toSeq,
-      MetaData = metaData.map(_.asMetaDataType).toSeq,
-      iname = name.map{
+      this.name.map{
         qlmid => qlmid.asQlmIDType
       },
+      this.description.map{ 
+        case des: Description => 
+          des.asDescriptionType 
+      }.toVector,
+      this.metaData.map(_.asMetaDataType).toSeq,
       //Seq(QlmIDType(path.lastOption.getOrElse(throw new IllegalArgumentException(s"OdfObject should have longer than one segment path: $path")))),
-      value = value.map{ 
+      this.value.map{ 
         value : Value[Any] => value.asValueType
       }.toSeq,
-      attributes = HashMap{
+      HashMap{
         "@name" -> DataRecord(
           nameAttribute
         )
-      } ++ attributesToDataRecord( attributes )
+      } ++ attributesToDataRecord( this.attributes )
     )
   }
 

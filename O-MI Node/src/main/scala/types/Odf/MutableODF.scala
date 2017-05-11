@@ -8,14 +8,12 @@ import scala.xml.NodeSeq
 import parsing.xmlGen.xmlTypes.{ObjectsType, ObjectType}
 import parsing.xmlGen.{odfDefaultScope, scalaxb, defaultScope}
 
-class MutableODF(
-  _nodes: Seq[Node]  = Vector.empty
+class MutableODF private[odf](
+  protected[odf] val nodes: MutableHashMap[Path,Node] = MutableHashMap.empty
 ) extends ODF[MutableHashMap[Path,Node],MutableTreeSet[Path]] {
   type M = MutableHashMap[Path,Node]
   type S = MutableTreeSet[Path]
-  protected[odf] val nodes: MutableHashMap[Path,Node] = MutableHashMap.empty
   protected[odf] val paths: MutableTreeSet[Path] = MutableTreeSet( nodes.keys.toSeq:_* )(PathOrdering)
-  addNodes( _nodes )
   def union( that: ODF[M,S]): ODF[M,S] = {
     val pathIntersection: SortedSet[Path] = this.paths.intersect( that.paths)
     val thatOnlyNodes: Set[Node] = (that.paths -- pathIntersection ).flatMap{
@@ -52,11 +50,11 @@ class MutableODF(
     this.paths --=( subtrees )
     this
   } 
-  def immutable: ImmutableODF = new ImmutableODF( 
+  def immutable: ImmutableODF = ImmutableODF( 
       this.nodes.values.toVector
   )
   //Should be this? or create a copy?
-  def mutable: MutableODF =  new MutableODF( 
+  def mutable: MutableODF = MutableODF( 
       this.nodes.values.toVector
   )
 
@@ -104,10 +102,44 @@ class MutableODF(
       case ap: Path =>
         nodes.get(ap)
     }
-    new MutableODF(
+    MutableODF(
         (subtree ++ ancestors).toVector
     )
   }
 
 }
 
+object MutableODF{
+  def apply(
+      _nodes: Seq[Node]  = Vector.empty
+  ) : MutableODF ={
+    val mutableHMap : MutableHashMap[Path,Node] = MutableHashMap.empty
+    val sorted = _nodes.sortBy( _.path)(PathOrdering)
+    sorted.foreach{
+      case node: Node =>
+        if( mutableHMap.contains( node.path ) ){
+            (node, mutableHMap.get(node.path) ) match{
+              case (  ii: InfoItem , Some(oii: InfoItem) ) => 
+                mutableHMap(ii.path) = ii.union(oii) 
+              case ( obj: Object ,  Some(oo: Object) ) =>
+                mutableHMap(obj.path) = obj.union( oo ) 
+              case ( obj: Objects , Some( oo: Objects) ) =>
+                mutableHMap(obj.path) = obj.union( oo ) 
+              case ( n, on) => 
+                throw new Exception( 
+                  "Found two different types for same Path when tried to create ImmutableODF." 
+                )
+            }
+        } else {
+          var toAdd = node
+          while( !mutableHMap.contains(toAdd.path) ){
+            mutableHMap += toAdd.path -> toAdd
+            toAdd = toAdd.createParent
+          }
+        }
+    }
+    new MutableODF(
+      mutableHMap
+    )
+  }
+}
