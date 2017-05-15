@@ -115,6 +115,7 @@ trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[P
       case _ => false
     }
   }
+  override lazy val hashCode: Int = this.nodes.hashCode
 }
 
 object ODF{

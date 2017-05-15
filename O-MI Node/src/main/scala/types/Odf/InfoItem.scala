@@ -81,7 +81,6 @@ case class InfoItem(
   }
 
   def asInfoItemType: InfoItemType = {
-    println( description )
     InfoItemType(
       this.name.map{
         qlmid => qlmid.asQlmIDType

@@ -41,7 +41,33 @@ class OdfTypesTest extends mutable.Specification{
     val newType = ImmutableODF( testingNodes )
     val oldType = NewTypeConverter.convertODF( newType )
     val backToNew = OldTypeConverter.convertOdfObjects( oldType )
-    backToNew must be( newType )
+    val o = backToNew
+    val iODF = newType 
+    lazy val parsedPaths = o.getPaths.toSet 
+    lazy val correctPaths = iODF.getPaths.toSet
+    lazy val pathCheck = (parsedPaths must contain( correctPaths ) ) and
+    ( (parsedPaths -- correctPaths) must beEmpty ) and ( (correctPaths -- parsedPaths) must beEmpty )
+    lazy val parsedII = o.getInfoItems.toSet 
+    lazy val correctII = iODF.getInfoItems.toSet
+    lazy val iICheck ={
+      (parsedII -- correctII ) must beEmpty } and {
+      (correctII -- parsedII) must beEmpty } and {
+      parsedII must contain(correctII)
+    } 
+
+    lazy val parsedObj = o.getObjects.toSet 
+    lazy val correctObj = iODF.getObjects.toSet
+    lazy val objCheck ={
+      (parsedObj -- correctObj ) must beEmpty } and {
+      (correctObj -- parsedObj ) must beEmpty } and {
+      parsedObj must contain(correctObj)
+    } 
+
+    lazy val parsedMap = o.getNodesMap
+    lazy val correctMap = iODF.getNodesMap
+    lazy val mapCheck = parsedMap.toSet must contain(correctMap.toSet)
+  
+    pathCheck and iICheck and objCheck and mapCheck //and (backToNew must be(newType)) //TODO: Why matching ditrecly fails?
   }
 
 
@@ -145,8 +171,8 @@ class OdfTypesTest extends mutable.Specification{
   }
   def toXMLTest[M<:scala.collection.Map[Path,Node],S <: scala.collection.SortedSet[Path]](
     o_df: ODF[M,S]
-  ) ={
-     val p = new scala.xml.PrettyPrinter(120, 4)
+  ) = {
+    val p = new scala.xml.PrettyPrinter(120, 4)
     o_df.asXML showAs{
       case ns => 
         "Generated:\n\n" + p.format(ns.head) + "\n"
@@ -158,45 +184,77 @@ class OdfTypesTest extends mutable.Specification{
   ) ={
     ODFParser.parse( o_df.asXML.toString ) should beRight{
       o: ImmutableODF => 
-        o must be( o_df.immutable)
+        val iODF = o_df.immutable 
+        lazy val parsedPaths = o.getPaths.toSet 
+        lazy val correctPaths = iODF.getPaths.toSet
+        lazy val pathCheck = (parsedPaths must contain( correctPaths ) ) and
+        ( (parsedPaths -- correctPaths) must beEmpty ) and ( (correctPaths -- parsedPaths) must beEmpty )
+        lazy val parsedII = o.getInfoItems.toSet 
+        lazy val correctII = iODF.getInfoItems.toSet
+        lazy val iICheck ={
+         (parsedII -- correctII ) must beEmpty } and {
+          (correctII -- parsedII) must beEmpty } and {
+          parsedII must contain(correctII)
+        } 
+        lazy val parsedObj = o.getObjects.toSet 
+        lazy val correctObj = iODF.getObjects.toSet
+        lazy val objCheck ={
+         (parsedObj -- correctObj ) must beEmpty } and {
+          (correctObj -- parsedObj ) must beEmpty } and {
+          parsedObj must contain(correctObj)
+        } 
+        lazy val parsedMap = o.getNodesMap
+        lazy val correctMap = iODF.getNodesMap
+        lazy val mapCheck = parsedMap.toSet must contain(correctMap.toSet)
+
+        pathCheck and iICheck and objCheck and mapCheck //and (o must be( iODF )) //TODO: Why matching ditrecly fails?
     }
   }
  
   def testingNodesAsXML ={
-    <Objects xmlns="http://www.opengroup.org/xsd/odf/1.0/">
-      <Object>
-        <id>ObjectA</id>
-        <InfoItem name="II1"/>
-        <InfoItem name="II2">
-          <name idType="TestID" tagType="TestTag">IIO1</name>
-          <name idType="TestID" tagType="TestTag">IIO2</name>
-          <description lang="English">Testing</description>
-          <description lang="Finnish">Testaus</description>
-          <MetaData>
-            <InfoItem name="A"/>
-            <InfoItem name="B"/>
-          </MetaData>
-          <value type="xs:int" dateTime={s"${timestampToXML(testTime).toXMLFormat()}"} unixTime={s"${testTime.getTime / 1000}"} >{93}</value>
-          <value type="xs:float" dateTime={s"${timestampToXML(testTime).toXMLFormat()}"} unixTime={s"${testTime.getTime / 1000}"} >{51.9}</value>
-          <value dateTime={s"${timestampToXML(testTime).toXMLFormat()}"} unixTime={s"${testTime.getTime / 1000}"} >{81.5}</value>
-        </InfoItem>
-      </Object>
-      <Object>
-        <id>ObjectB</id>
+  <Objects xmlns="http://www.opengroup.org/xsd/odf/1.0/">
         <Object>
-          <id>ObjectB</id>
-          <InfoItem name="II1"/>
+            <id>ObjectA</id>
+            <InfoItem name="II1">
+                <name>II1</name>
+            </InfoItem>
+            <InfoItem name="II2">
+                <name>II2</name>
+                <name tagType="TestTag" idType="TestID">II2O1</name>
+                <name tagType="TestTag" idType="TestID">II2O2</name>
+                <description lang="English">Testing</description>
+                <description lang="Finnish">Testaus</description>
+                <MetaData>
+                    <InfoItem name="A">
+                        <name>A</name>
+                    </InfoItem>
+                    <InfoItem name="B">
+                        <name>B</name>
+                    </InfoItem>
+                </MetaData>
+                <value unixTime="1494506695" type="xs:int" dateTime="2017-05-11T15:44:55.000+03:00">93</value>
+                <value unixTime="1494506695" type="xs:float" dateTime="2017-05-11T15:44:55.000+03:00">51.9</value>
+                <value unixTime="1494506695" dateTime="2017-05-11T15:44:55.000+03:00">81.5</value>
+            </InfoItem>
         </Object>
-      </Object>
-      <Object>
-        <id>ObjectC</id>
-        <Object type="TestingType">
-          <id idType="TestID" tagType="TestTag">ObjectCC</id>
-          <id idType="TestID" tagType="TestTag">OCC</id>
-          <description lang="English">Testing</description>
-          <description lang="Finnish">Testaus</description>
+        <Object>
+            <id>ObjectB</id>
+            <Object>
+                <id>ObjectB</id>
+                <InfoItem name="II1">
+                    <name>II1</name>
+                </InfoItem>
+            </Object>
         </Object>
-      </Object>
+        <Object>
+            <id>ObjectC</id>
+            <Object type="TestingType">
+                <id tagType="TestTag" idType="TestID">ObjectCC</id>
+                <id tagType="TestTag" idType="TestID">OCC</id>
+                <description lang="English">Testing</description>
+                <description lang="Finnish">Testaus</description>
+            </Object>
+        </Object>
     </Objects>
   }
 

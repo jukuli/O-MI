@@ -53,7 +53,7 @@ object NewTypeConverter{
     objects: Seq[OdfObject] = Vector.empty
   ) : OdfObject = {
     var ids = obj.id.map( convertQlmID(_)).toVector 
-    if( !ids.contains(obj.path.last ) ){
+    if( !ids.map(_.value).contains(obj.path.last ) ){
       ids = ids ++ Vector( OdfQlmID(obj.path.last) )
     }
     OdfObject(
