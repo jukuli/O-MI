@@ -111,8 +111,11 @@ trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[P
   override def equals( that: Any ) : Boolean ={
     that match{
       case another: ODF[M,S] =>
+        println( s"Path equals: ${paths equals another.paths}\n Nodes equals:${nodes equals another.nodes}" )
         (paths equals another.paths) && (nodes equals another.nodes)
-      case _ => false
+      case a: Any => 
+        println( s" Comparing ODF with something: $a")
+        false
     }
   }
   override lazy val hashCode: Int = this.nodes.hashCode

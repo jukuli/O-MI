@@ -34,8 +34,38 @@ class OdfTypesTest extends mutable.Specification{
     "should parse correctly XML created from ODF to equal ODF" in fromXMLTest(o_df) 
   } 
   "Converters" should {
-    "convert from old to new and back to old and stay the same" in repeatedOldConvertTest
-    "convert from new to old and back to new and stay the same" in repeatedNewConvertTest
+    //TODO: What shoul be tested? Conversion may lose data.
+    "convert from old to new and have same XML" in convertedOldHasSameXML
+    "convert from new to old and have same XML" in convertedNewHasSameXML
+    "Convert from old to new and back to old and stay the same" in repeatedOldConvertTest
+    "Convert from new to old and back to new and stay the same" in repeatedNewConvertTest
+  }
+  def convertedNewHasSameXML ={
+    val p = new scala.xml.PrettyPrinter(120, 4)
+    val newType = ImmutableODF( testingNodes )
+    val oldType = NewTypeConverter.convertODF( newType )
+    oldType.asXML showAs{
+      case ns => 
+        "Original:\n\n" + p.format(newType.asXML.head) + "\n\n" ++
+        "Converted:\n\n" + p.format(ns.head) + "\n"
+      
+    } must beEqualToIgnoringSpace( newType.asXML )
+  }
+  def convertedOldHasSameXML ={
+    val p = new scala.xml.PrettyPrinter(120, 4)
+    val oldType : OdfObjects = parsing.OdfParser.parse( testingNodesAsXML.toString ) match {
+      case Right( o ) => o
+      case Left( errors ) =>
+        println( errors )
+        throw new Exception("Parsing failed!")
+    }
+    val newType = OldTypeConverter.convertOdfObjects(oldType) 
+    newType.asXML showAs{
+      case ns => 
+        "Original:\n\n" + p.format(oldType.asXML.head) + "\n\n" ++
+        "Converted:\n\n" + p.format(ns.head) + "\n"
+      
+    } must beEqualToIgnoringSpace( oldType.asXML )
   }
   def  repeatedNewConvertTest ={
     val newType = ImmutableODF( testingNodes )
@@ -67,7 +97,7 @@ class OdfTypesTest extends mutable.Specification{
     lazy val correctMap = iODF.getNodesMap
     lazy val mapCheck = parsedMap.toSet must contain(correctMap.toSet)
   
-    pathCheck and iICheck and objCheck and mapCheck //and (backToNew must be(newType)) //TODO: Why matching ditrecly fails?
+    pathCheck and iICheck and objCheck and mapCheck and (backToNew must be(newType)) 
   }
 
 
@@ -207,7 +237,10 @@ class OdfTypesTest extends mutable.Specification{
         lazy val correctMap = iODF.getNodesMap
         lazy val mapCheck = parsedMap.toSet must contain(correctMap.toSet)
 
-        pathCheck and iICheck and objCheck and mapCheck //and (o must be( iODF )) //TODO: Why matching ditrecly fails?
+        println(  s"Parsed hashCode: ${o.hashCode}, correct HashCode: ${iODF.hashCode }")
+        println(  s"Parsed paths equals correct: ${o.paths equals iODF.paths}")
+        println(  s"Parsed nodes equals correct: ${o.nodes equals iODF.nodes}")
+        pathCheck and iICheck and objCheck and mapCheck and (o must beEqualTo( iODF )) 
     }
   }
  

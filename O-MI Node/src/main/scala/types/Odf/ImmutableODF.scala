@@ -133,6 +133,17 @@ case class ImmutableODF private[odf] (
         (subtree ++ ancestors).toVector
     )
   }
+  override def equals( that: Any ) : Boolean ={
+    that match{
+      case another: ODF[M,S] =>
+        println( s"Path equals: ${paths equals another.paths}\n Nodes equals:${nodes equals another.nodes}" )
+        (paths equals another.paths) && (nodes equals another.nodes)
+      case a: Any => 
+        println( s" Comparing ODF with something: $a")
+        false
+    }
+  }
+  override lazy val hashCode: Int = this.nodes.hashCode
 }
 
 object ImmutableODF{
