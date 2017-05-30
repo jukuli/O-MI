@@ -18,9 +18,8 @@ import java.net.InetSocketAddress
 import scala.collection.JavaConversions.iterableAsScalaIterable
 import scala.concurrent.duration._
 import scala.concurrent.Await
-import scala.util.{Try, Success, Failure }
-
-import akka.actor.{Actor, ActorSystem, ActorLogging, ActorRef, Props}
+import scala.util.{Failure, Success, Try}
+import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 import akka.http.scaladsl.model.RemoteAddress
 import akka.util.Timeout
 import akka.pattern.ask
@@ -29,13 +28,14 @@ import akka.io.{IO, Tcp}
 import akka.util.Timeout
 import org.slf4j.LoggerFactory
 import http.Authorization.ExtensibleAuthorization
-import http.{OmiConfig, IpAuthorization, OmiConfigExtension}
+import http.{IpAuthorization, OmiConfig, OmiConfigExtension}
 import parsing.OdfParser
 import types.OdfTypes._
-import types.OmiTypes.{WriteRequest, ResponseRequest, OmiResult, Results}
+import types.OmiTypes._
 import types._
 import agentSystem._
 import com.typesafe.config.Config
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object  ExternalAgentListener extends PropsCreator{
@@ -64,41 +64,20 @@ class ExternalAgentListener(
   import Tcp._
   implicit def actorSystem : ActorSystem = context.system
 
-  def start : InternalAgentResponse = {
+  override def preStart: Unit = {
     val binding = (IO(Tcp)  ? Tcp.Bind(self,
       new InetSocketAddress(interface, port)))(timeout)
-    Await.result(
-      binding.map{
-        case Bound(localAddress: InetSocketAddress) =>
-          CommandSuccessful()
-      }.recover{
-        case t : Throwable =>
-          StartFailed(t.getMessage, Some(t))
-      }, timeout
-    )
-
+    Await.result(binding, timeout )
   }
 
-  def stop : InternalAgentResponse = {
+  override def postStop : Unit = {
     val unbinding = (IO(Tcp)  ? Tcp.Unbind)(timeout)
-    Await.result(
-      unbinding.map{
-        case Tcp.Unbound =>
-          CommandSuccessful()
-      }.recover{
-        case t : Throwable =>
-          StopFailed(t.getMessage, Some(t))
-      }, timeout
-      )
-
+    Await.result( unbinding, timeout )
   }
   
   /** Partial function for handling received messages.
     */
   override  def receive  = {
-    case Start() => sender() ! start 
-    case Restart() => sender() ! restart 
-    case Stop() => sender() ! stop 
     case Bound(localAddress) =>
       // TODO: do something?
       // It seems that this branch was not executed?
@@ -181,7 +160,7 @@ class ExternalAgentHandler(
       //check if the last part of the message contains closing xml tag
       if(storage.slice(lastCharIndex - 9, lastCharIndex + 1).endsWith("</Objects>")) {
 
-        val parsedEntries = OdfParser.parse(storage, None)
+        val parsedEntries = OdfParser.parse(storage)
         storage = ""
         parsedEntries match {
           case Left(errors) =>

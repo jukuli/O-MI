@@ -35,7 +35,9 @@ class  OdfInfoItemImpl(
   path:                 Path,
   values:               OdfTreeCollection[OdfValue[Any]] = OdfTreeCollection(),
   description:          Option[OdfDescription] = None,
-  metaData:             Option[OdfMetaData] = None
+  metaData:             Option[OdfMetaData] = None,
+  typeValue: Option[String] = None,
+  attributes:           Map[String,String] = HashMap.empty
 ) extends Serializable {
 
 
@@ -55,7 +57,9 @@ class  OdfInfoItemImpl(
       } yield i
       if( combined.isEmpty )
         if( this.metaData.isEmpty ) another.metaData else this.metaData
-      else combined}
+      else combined},
+      another.typeValue orElse typeValue,
+      this.attributes ++ another.attributes
     )
   }
 
@@ -84,7 +88,9 @@ class  OdfInfoItemImpl(
         "@name" -> DataRecord(
           path.lastOption.getOrElse(throw new IllegalArgumentException(s"OdfObject should have longer than one segment path: $path"))
         )
-      }// ++  typeValue.map{ n => ("@type" -> DataRecord(n))}
+      } ++ typeValue.map{ tv =>"@type" -> DataRecord(typeValue) }.toVector
+      ++ attributesToDataRecord( this.attributes )
+      // ++  typeValue.map{ n => ("@type" -> DataRecord(n))}
     )
   }
 

@@ -31,7 +31,8 @@ class  OdfObjectImpl(
   infoItems:            OdfTreeCollection[OdfInfoItem],
   objects:              OdfTreeCollection[OdfObject],
   description:          Option[OdfDescription] = None,
-  typeValue:            Option[String] = None
+  typeValue:            Option[String] = None,
+  attributes:           Map[String,String] = HashMap.empty
 ) extends Serializable {
   require(path.length > 1,
     s"OdfObject should have longer than one segment path (use OdfObjects for <Objects>): Path($path)")
@@ -79,7 +80,8 @@ class  OdfObjectImpl(
       thisInfo.merged(thatInfo) { case ((k1, v1), (_, v2)) => (k1, v1.combine(v2)) }.values,
       thisObj.merged(thatObj) { case ((k1, v1), (_, v2)) => (k1, v1.combine(v2)) }.values,
       another.description orElse description,
-      another.typeValue orElse typeValue
+      another.typeValue orElse typeValue,
+      this.attributes ++ another.attributes
     )
   }
 
@@ -110,7 +112,9 @@ class  OdfObjectImpl(
               path,
               last.values,
               last.description.fold(last.description)(n => head.description),
-              last.metaData.fold(last.metaData)(n => head.metaData)
+              last.metaData.fold(last.metaData)(n => head.metaData),
+              last.typeValue.orElse(head.typeValue),
+              head.attributes ++ last.attributes 
               ) //use metadata and description from hierarchytree
           } yield infoI
     }
@@ -136,7 +140,8 @@ class  OdfObjectImpl(
           sharedObjsOut,
           //get description only if another has it too
           another.description.fold(another.description)(n => description),
-          typeValue
+          another.typeValue orElse typeValue,
+          attributes ++ another.attributes 
         )
       )
     }
@@ -253,7 +258,7 @@ class  OdfObjectImpl(
         subobj: OdfObject =>
         subobj.asObjectType
       }.toSeq,
-      attributes = Map.empty[String, DataRecord[Any]] ++  typeValue.map{ n => ("@type" -> DataRecord(n))}
+      attributes = Map.empty[String, DataRecord[Any]] ++  typeValue.map{ n => ("@type" -> DataRecord(n))} ++ attributesToDataRecord( this.attributes )
     )
   }
 }
