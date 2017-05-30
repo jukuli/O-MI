@@ -27,6 +27,7 @@ import types.OmiTypes._
 import types.Path
 import analytics.{AddWrite, AnalyticsStore}
 import agentSystem.{AgentName}
+import types.odf.{ NewTypeConverter, OldTypeConverter}
 
 trait DBWriteHandler extends DBHandlerBase {
 
@@ -58,7 +59,7 @@ trait DBWriteHandler extends DBHandlerBase {
   private def sendEventCallback(esub: EventSub, odfWithoutTypes: OdfObjects) : Unit = {
     val id = esub.id
     val callbackAddr = esub.callback
-    val hTree = singleStores.hierarchyStore execute GetTree()
+    val hTree = NewTypeConverter.convertODF(singleStores.hierarchyStore execute GetTree())
     //union with odfWithoutTypes to make sure that we don't lose odf branches that are not in hierarchy yet
     //and then intersect to get correct typeValues etc. from hierarchyTree
     val odf = hTree.union(odfWithoutTypes.valuesRemoved).intersect(odfWithoutTypes)
@@ -104,7 +105,7 @@ trait DBWriteHandler extends DBHandlerBase {
     val esubLists: Seq[(EventSub, OdfInfoItem)] = events.collect{
       case ChangeEvent(infoItem) =>  // note: AttachEvent extends Changeevent
 
-        val esubs = singleStores.subStore execute LookupEventSubs(infoItem.path)
+        val esubs = singleStores.subStore execute LookupEventSubs(OldTypeConverter.convertPath(infoItem.path))
         esubs map { (_, infoItem) }  // make tuples
     }.flatten
     // Aggregate events under same subscriptions (for optimized callbacks)
@@ -154,7 +155,7 @@ trait DBWriteHandler extends DBHandlerBase {
    * @return returns Sequence of SubValues to be added to database
    */
   private def handlePollData(path: Path, newValue: OdfValue[Any], oldValueOpt: Option[OdfValue[Any]]) = {
-    val relatedPollSubs = singleStores.subStore execute GetSubsForPath(path)
+    val relatedPollSubs = singleStores.subStore execute GetSubsForPath(OldTypeConverter.convertPath(path))
 
     relatedPollSubs.collect {
       //if no old value found for path or start time of subscription is after last value timestamp
@@ -162,7 +163,7 @@ trait DBWriteHandler extends DBHandlerBase {
       case sub if(oldValueOpt.forall(oldValue =>
         singleStores.valueShouldBeUpdated(oldValue, newValue) &&
           (oldValue.timestamp.before(sub.startTime) || oldValue.value != newValue.value))) => {
-        singleStores.pollDataPrevayler execute AddPollData(sub.id, path, newValue)
+        singleStores.pollDataPrevayler execute AddPollData(sub.id, OldTypeConverter.convertPath(path), OldTypeConverter.convertOdfValue(newValue))
       }
     }
   }
@@ -179,7 +180,7 @@ trait DBWriteHandler extends DBHandlerBase {
     val pathValueOldValueTuples = for {
       info <- infoItems.toSeq
       path = info.path
-      oldValueOpt = singleStores.latestStore execute LookupSensorData(path)
+      oldValueOpt = singleStores.latestStore execute LookupSensorData(OldTypeConverter.convertPath(path))
       value <- info.values
     } yield (path, value, oldValueOpt)
 
@@ -251,13 +252,13 @@ trait DBWriteHandler extends DBHandlerBase {
           val updateTree: OdfObjects =
             (updatedStaticItems map createAncestors).foldLeft(OdfObjects())(_ union _)
 
-          singleStores.hierarchyStore execute Union(updateTree)
+          singleStores.hierarchyStore execute Union(OldTypeConverter.convertOdfObjects(updateTree))
         }
         triggeringEvents.foreach(
           iie =>
             iie.infoItem.values.headOption.map(
               newValue=>
-                singleStores.latestStore execute SetSensorData(iie.infoItem.path, newValue)
+                singleStores.latestStore execute SetSensorData(OldTypeConverter.convertPath(iie.infoItem.path), OldTypeConverter.convertOdfValue(newValue))
             )
         )
     }

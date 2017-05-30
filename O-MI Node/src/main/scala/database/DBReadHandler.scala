@@ -13,6 +13,7 @@ import analytics.{AddUser, AddRead, AnalyticsStore}
 import scala.xml.{NodeSeq, PrettyPrinter}
 //import akka.http.StatusCode
 
+import types.odf.{ NewTypeConverter, OldTypeConverter}
 import types.OdfTypes._
 import types.OmiTypes._
 import http.{ActorSystemContext, Storages}
@@ -60,7 +61,7 @@ trait DBReadHandler extends DBHandlerBase{
 
          // NOTE: Might go off sync with tree or values if the request is large,
          // but it shouldn't be a big problem
-         val metadataTree = (singleStores.hierarchyStore execute GetTree())
+         val metadataTree = NewTypeConverter.convertODF((singleStores.hierarchyStore execute GetTree()))
 
          //Find nodes from the request that HAVE METADATA OR DESCRIPTION REQUEST
          def nodesWithoutMetadata: Option[OdfObjects] = getOdfNodes(read.odf).collect {

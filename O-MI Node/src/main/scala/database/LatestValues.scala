@@ -20,8 +20,7 @@ import java.util.Date
 import scala.collection.immutable.HashMap
 
 import org.prevayler._
-import types.OdfTypes._
-import types.Path
+import types.odf._
 
 // TODO: save the whole InfoItem
 /*case class LatestInfoItemData(
@@ -30,26 +29,26 @@ import types.Path
   val metadataStr: Option[OdfMetaData] = None,
   val description: Option[OdfDescription] = None
   ) {
-  def toOdfInfoItem(path: Path, value: OdfValue[Any]) = 
-    OdfInfoItem(path, Iterable(value), description, metadataStr)
+  def toInfoItem(path: Path, value: Value[Any]) = 
+    InfoItem(path, Iterable(value), description, metadataStr)
 }
  */ 
 
 /**
  * The latest values should be stored here. Contains only the latest value for each path.
  */
-case class LatestValues(var allData: Map[Path, OdfValue[Any]])
+case class LatestValues(var allData: Map[Path, Value[Any]])
 object LatestValues {
   type LatestStore = Prevayler[LatestValues]
   def empty = LatestValues(Map.empty)
 }
 
 
-case class LookupSensorData(sensor: Path) extends Query[LatestValues, Option[OdfValue[Any]]] {
+case class LookupSensorData(sensor: Path) extends Query[LatestValues, Option[Value[Any]]] {
   def query(ls: LatestValues, d: Date) = ls.allData.get(sensor)
 }
 
-case class LookupSensorDatas(sensors: Vector[Path]) extends Query[LatestValues, Vector[(Path, OdfValue[Any])]] {
+case class LookupSensorDatas(sensors: Vector[Path]) extends Query[LatestValues, Vector[(Path, Value[Any])]] {
   def query(ls: LatestValues, d: Date) = {
     (for (sensorPath <- sensors) yield {
       val dataOpt = ls.allData get sensorPath
@@ -57,11 +56,11 @@ case class LookupSensorDatas(sensors: Vector[Path]) extends Query[LatestValues, 
     }).flatten
   }
 }
-case class LookupAllDatas() extends Query[LatestValues, Map[Path, OdfValue[Any]]] {
+case class LookupAllDatas() extends Query[LatestValues, Map[Path, Value[Any]]] {
   def query(ls: LatestValues, d: Date) = ls.allData
 }
 
-case class SetSensorData(sensor: Path, value: OdfValue[Any]) extends Transaction[LatestValues] {
+case class SetSensorData(sensor: Path, value: Value[Any]) extends Transaction[LatestValues] {
   def executeOn(ls: LatestValues, d: Date) = ls.allData = ls.allData + (sensor -> value)
 }
 
@@ -73,39 +72,41 @@ case class EraseSensorData(sensor: Path) extends Transaction[LatestValues] {
 /**
  * Stores hierarchy of the odf, so it removes all values if they end up in this tree
  */
-case class OdfTree(var root: OdfObjects)
+case class OdfTree(var root: ImmutableODF)
 object OdfTree {
   type OdfTreeStore = Prevayler[OdfTree]
-  def empty = OdfTree(OdfObjects())
+  def empty = OdfTree(ImmutableODF())
 }
 
-case class GetTree() extends Query[OdfTree, OdfObjects] {
+case class GetTree() extends Query[OdfTree, ImmutableODF] {
   def query(t: OdfTree, d: Date) = t.root
 }
 
 /**
  * This is used for updating also
  */
-case class Union(anotherRoot: OdfObjects) extends Transaction[OdfTree] {
-  def executeOn(t: OdfTree, d: Date) = t.root = t.root union anotherRoot.valuesRemoved  // Remove values so they don't pile up
+case class Union(anotherRoot: ImmutableODF) extends Transaction[OdfTree] {
+  def executeOn(t: OdfTree, d: Date) = t.root = (t.root union anotherRoot.valuesRemoved).immutable  // Remove values so they don't pile up
 }
 
 case class TreeRemovePath(path: Path) extends Transaction[OdfTree] {
 
   def executeOn(t: OdfTree, d: Date) = {
+    t.root.removePath( path).valuesRemoved
+    /*
     val nodeOption = t.root.get(path)
     nodeOption match {
-      case Some(ob: OdfObject)   => {
+      case Some(ob: Object)   => {
         t.root = (t.root -- createAncestors(ob)).valuesRemoved
       }
-      case Some(ii: OdfInfoItem) => {
+      case Some(ii: InfoItem) => {
         t.root = (t.root -- createAncestors(ii)).valuesRemoved
       }
-      case Some(objs: OdfObjects)  => {
-        t.root = OdfObjects()
+      case Some(objs: Objects)  => {
+        t.root = Objects()
       } //remove whole tree
       case _ => //noop
-    }
+    }*/
   }
 }
 case class RemoveIntervalSub(id: Long) extends TransactionWithQuery[Subs, Boolean] {
@@ -157,8 +158,8 @@ case class RemoveIntervalSub(id: Long) extends TransactionWithQuery[Subs, Boolea
     }
   }
 
-  /*case class NewPollDataEvent(paths: Vector[(Path,OdfValue[Any])]) extends Query[Subs, Seq[((Path, OdfValue[Any]), Set[Long])]] {
-    def query(store: Subs, d: Date): Vector[((Path, OdfValue[Any]), Set[Long])] = {
+  /*case class NewPollDataEvent(paths: Vector[(Path,Value[Any])]) extends Query[Subs, Seq[((Path, Value[Any]), Set[Long])]] {
+    def query(store: Subs, d: Date): Vector[((Path, Value[Any]), Set[Long])] = {
       paths.map(path => (path, store.pathToSubs(path._1)))
     }
   }*/

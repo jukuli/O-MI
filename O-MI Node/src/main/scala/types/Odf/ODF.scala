@@ -82,6 +82,7 @@ trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[P
     }
   }
 
+  def valuesRemoved: ODF[M,S]
   def createObjectType( obj: Object ): ObjectType ={
     val (objects, infoItems ) = getChilds( obj.path ).partition{
       case obj: Object => true

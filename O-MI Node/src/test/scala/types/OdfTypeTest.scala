@@ -5,6 +5,7 @@ import java.util.Date
 import java.sql.Timestamp
 
 import scala.xml.Utility.trim
+import scala.collection.immutable.HashMap
 import org.specs2.matcher._
 import org.specs2.matcher.XmlMatchers._
 
@@ -38,6 +39,12 @@ class OdfTypesTest extends mutable.Specification{
     "convert from new to old and have same XML" in convertedNewHasSameXML
     "Convert from old to new and back to old and stay the same" in repeatedOldConvertTest
     "Convert from new to old and back to new and stay the same" in repeatedNewConvertTest
+  }
+  "Object" should {
+    "union correctly" >> objectUnionTest
+  }
+  "InfoItem" should {
+    "union correctly" >> infoItemUnionTest
   }
   def convertedNewHasSameXML ={
     val p = new scala.xml.PrettyPrinter(120, 4)
@@ -118,6 +125,68 @@ class OdfTypesTest extends mutable.Specification{
     } must beEqualToIgnoringSpace(
       oldType.asXML     
     )
+
+  }
+
+
+  def infoItemUnionTest ={
+    val lII = InfoItem(
+      "II",
+      Path( "Objects/Obj/II"),
+      Vector(QlmID( "II1" )),
+      Vector(Description("test", Some("English"))),
+      Vector(Value( "test",testTime )),
+      Some(MetaData(Vector(InfoItem( "MD1", Path( "Objects/Obj/II/MetaData/MD1"))))),
+      HashMap( "test1" -> "test" )
+      )
+    val rII =  InfoItem(
+      "II",
+      Path( "Objects/Obj/II"),
+      Vector(QlmID( "II2" )),
+      Vector(Description("test", Some("Finnish"))),
+      Vector(Value( 31,testTime )),
+      Some(MetaData(Vector(InfoItem( "MD2", Path( "Objects/Obj/II/MetaData/MD2"))))),
+      HashMap( "test2" -> "test" )
+    )
+    val correct = InfoItem(
+      "II",
+      Path( "Objects/Obj/II"),
+      Vector(QlmID("II1"),QlmID( "II2" )),
+      Vector(Description("test", Some("English")),Description("test", Some("Finnish"))),
+      Vector(Value( "test",testTime ),Value( 31,testTime )),
+      Some(MetaData(Vector(
+        InfoItem( "MD1", Path( "Objects/Obj/II/MetaData/MD1")),
+        InfoItem( "MD2", Path( "Objects/Obj/II/MetaData/MD2"))
+      ))),
+      HashMap( "test1" -> "test", "test2" -> "test" )
+    )
+    
+    lII.union(rII) should beEqualTo( correct) 
+  }
+
+  def objectUnionTest ={
+    val lObj = Object(
+      Vector( QlmID( "Obj" ), QlmID( "O1" )),
+      Path( "Objects/Obj" ),
+      Some( "test1" ),
+      Vector(Description("test", Some("English"))),
+      HashMap( "test1" -> "test" )
+    )
+    val rObj = Object(
+      Vector( QlmID( "Obj" ), QlmID( "O2" )),
+      Path( "Objects/Obj" ),
+      Some( "test2" ),
+      Vector(Description("test", Some("Finnish"))),
+      HashMap( "test2" -> "test" )
+    )
+    val correct = Object(
+      Vector( QlmID( "Obj" ), QlmID( "O1" ), QlmID( "O2" )),
+      Path( "Objects/Obj" ),
+      Some( "test1 test2" ),
+      Vector(Description("test", Some("English")),Description("test", Some("Finnish"))),
+      HashMap( "test1" -> "test", "test2" -> "test" )
+    )
+    lObj.union(rObj) should beEqualTo( correct) 
   }
 
   def createCorrect[M<:scala.collection.Map[Path,Node],S <: scala.collection.SortedSet[Path]](

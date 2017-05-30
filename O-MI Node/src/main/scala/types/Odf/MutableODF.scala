@@ -58,6 +58,14 @@ class MutableODF private[odf](
       this.nodes.values.toVector
   )
 
+  def valuesRemoved : ODF[M,S] ={
+    this.nodes.mapValues{
+      case ii: InfoItem => ii.copy( value = Vector() )
+      case obj: Object => obj 
+      case obj: Objects => obj
+    }
+    this
+  }
   def removePath( path: Path) : ODF[M,S] ={
     val subtreeP = getSubTreePaths( path )
     this.nodes --=( subtreeP )

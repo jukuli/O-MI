@@ -24,6 +24,7 @@ import akka.actor.{Cancellable, Props, Actor}
 import database.{Union, SingleStores}
 import http.OmiConfigExtension
 import types.OdfTypes._
+import types.odf.{ NewTypeConverter, OldTypeConverter}
 import types.OmiTypes.{WriteRequest, ReadRequest, OmiRequest}
 import types.Path
 
@@ -124,7 +125,7 @@ class AnalyticsStore(
       case (p,i) => createInfoWithMeta(p./(averageWriteInfoName), i.toString, tt, writeAverageDescription)}.map(_.createAncestors).reduceOption(_.union(_))
 
     (nw ++ aw).reduceOption(_.union(_)) //combine two Options and return Optional value
-      .foreach(data => singleStores.hierarchyStore.execute(Union(data)))
+      .foreach(data => singleStores.hierarchyStore.execute(Union(OldTypeConverter.convertOdfObjects(data))))
 
   }
   def updateReadAnalyticsData() = {
@@ -137,7 +138,7 @@ class AnalyticsStore(
     val ar = avgIntervalAccess.map{
       case (p,i) => createInfoWithMeta(p./(averageReadInfoName), i.toString, tt, readAverageDescription)}.map(_.createAncestors).reduceOption(_.union(_))
     (nr ++ ar).reduceOption(_.union(_)) //combine two Options and return Optional value
-      .foreach(data => singleStores.hierarchyStore.execute(Union(data)))
+      .foreach(data => singleStores.hierarchyStore.execute(Union(OldTypeConverter.convertOdfObjects(data))))
   }
   def updateUserAnalyticsData() = {
     context.system.log.info("updating user analytics")
@@ -145,7 +146,7 @@ class AnalyticsStore(
     val data = uniqueUsers(tt).map{
       case (p, i) => createInfoWithMeta(p./(numUserInfoName), i.toString, tt, uniqueUserDescription)
     }.map(_.createAncestors).reduceOption(_.union(_))
-    data.foreach(data=> singleStores.hierarchyStore.execute(Union(data)))
+    data.foreach(data=> singleStores.hierarchyStore.execute(Union(OldTypeConverter.convertOdfObjects(data))))
   }
 
   def receive = {

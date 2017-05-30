@@ -24,8 +24,7 @@ import scala.concurrent.duration.{FiniteDuration, Duration}
 
 import akka.actor.Cancellable
 import org.prevayler._
-import types.OdfTypes._
-import types._
+import types.odf._
 import types.OmiTypes._
 
 
@@ -90,7 +89,7 @@ object Subs {
 }
 
 case class PollSubData(
-                        idToData: collection.mutable.HashMap[Long, collection.mutable.HashMap[Path, List[OdfValue[Any]]]])
+                        idToData: collection.mutable.HashMap[Long, collection.mutable.HashMap[Path, List[Value[Any]]]])
 
 object PollSubData {
   def empty: PollSubData = PollSubData(collection.mutable.HashMap.empty)
@@ -103,7 +102,7 @@ object PollSubData {
  * @param path
  * @param value
  */
-case class AddPollData(subId: Long, path: Path, value: OdfValue[Any]) extends Transaction[PollSubData] {
+case class AddPollData(subId: Long, path: Path, value: Value[Any]) extends Transaction[PollSubData] {
   def executeOn(p: PollSubData, date: Date): Unit = {
     p.idToData.get(subId) match {
       case Some(pathToValues) => pathToValues.get(path) match {
@@ -125,9 +124,9 @@ case class AddPollData(subId: Long, path: Path, value: OdfValue[Any]) extends Tr
  * Used to Poll event subscription data from the prevayler. Can also used to remove data from subscription
  * @param subId
  */
-case class PollEventSubscription(subId: Long) extends TransactionWithQuery[PollSubData, collection.mutable.HashMap[Path,List[OdfValue[Any]]]] {
-  def executeAndQuery(p: PollSubData, date: Date): collection.mutable.HashMap[Path, List[OdfValue[Any]]] = {
-    p.idToData.remove(subId).getOrElse(collection.mutable.HashMap.empty[Path,List[OdfValue[Any]]])
+case class PollEventSubscription(subId: Long) extends TransactionWithQuery[PollSubData, collection.mutable.HashMap[Path,List[Value[Any]]]] {
+  def executeAndQuery(p: PollSubData, date: Date): collection.mutable.HashMap[Path, List[Value[Any]]] = {
+    p.idToData.remove(subId).getOrElse(collection.mutable.HashMap.empty[Path,List[Value[Any]]])
   }
 }
 
@@ -137,8 +136,8 @@ case class PollEventSubscription(subId: Long) extends TransactionWithQuery[PollS
  * so this can't be used to remove subscriptions.
  * @param subId
  */
-case class PollIntervalSubscription(subId:Long) extends TransactionWithQuery[PollSubData, collection.mutable.HashMap[Path, List[OdfValue[Any]]]]{
-  def executeAndQuery(p: PollSubData, date: Date): mutable.HashMap[Path, List[OdfValue[Any]]] = {
+case class PollIntervalSubscription(subId:Long) extends TransactionWithQuery[PollSubData, collection.mutable.HashMap[Path, List[Value[Any]]]]{
+  def executeAndQuery(p: PollSubData, date: Date): mutable.HashMap[Path, List[Value[Any]]] = {
     val removed = p.idToData.remove(subId)
 
     removed match {
@@ -179,7 +178,7 @@ case class RemovePollSubData(subId: Long) extends Transaction[PollSubData] {
 
 case class LookupEventSubs(path: Path) extends Query[Subs, Vector[EventSub]] {
   def query(es: Subs, d: Date): Vector[EventSub] =
-    (path.getParentsAndSelf flatMap (p => es.eventSubs.get(p))).flatten.toVector // get for Map returns Option (safe)
+    (path.getAncestorsAndSelf flatMap (p => es.eventSubs.get(p))).flatten.toVector // get for Map returns Option (safe)
 }
 
 case class RemoveWebsocketSubs() extends TransactionWithQuery[Subs, Unit] {

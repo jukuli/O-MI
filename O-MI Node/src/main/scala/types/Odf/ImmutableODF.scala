@@ -87,6 +87,11 @@ case class ImmutableODF private[odf] (
     this.copy( newNodes )
   }
 
+  def valuesRemoved: ODF[M,S] = this.copy( ImmutableHashMap( nodes.mapValues{ 
+    case ii: InfoItem => ii.copy( value = Vector() )
+    case obj: Object => obj 
+    case obj: Objects => obj
+  }.toVector:_*))
   def immutable: ImmutableODF = this.copy()
   def mutable: MutableODF = MutableODF( 
       nodes.values.toVector
