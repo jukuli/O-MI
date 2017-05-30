@@ -38,7 +38,6 @@ import parsing.xmlGen.xmlTypes.{
   MetaDataType
 }
 import types.OdfTypes.OdfTreeCollection.seqToOdfTreeCollection
-import types.OmiTypes.UserInfo
 import types._
 
 /** Parser for data in O-DF format*/
@@ -55,11 +54,11 @@ object ODFParser extends parsing.Parser[OdfParseResult] {
    *  @param file XML formatted file to be parsed. Should be in O-DF format.
    *  @return OdfParseResults
    */
-  def parse(file: File, user: Option[UserInfo]): OdfParseResult = {
+  def parse(file: File): OdfParseResult = {
     val parsed = Try(
       XMLParser.loadFile(file)
     )
-    parseTry(parsed, None)
+    parseTry(parsed)
 
   }
 
@@ -69,15 +68,15 @@ object ODFParser extends parsing.Parser[OdfParseResult] {
    *  @param xml_msg XML formatted string to be parsed. Should be in O-DF format.
    *  @return OdfParseResults
    */
-  def parse(xml_msg: String, user: Option[UserInfo] = None): OdfParseResult = {
+  def parse(xml_msg: String): OdfParseResult = {
     val parsed = Try(
       XMLParser.loadString(xml_msg)
     )
 
-    parseTry(parsed, None)
+    parseTry(parsed)
   }
 
-  private def parseTry(parsed: Try[Elem], user: Option[UserInfo] = None): OdfParseResult = {
+  private def parseTry(parsed: Try[Elem]): OdfParseResult = {
     parsed match {
       case Success(root) => parse(root)
       case Failure(f) => Left(Vector(ScalaXMLError(f.getMessage)))

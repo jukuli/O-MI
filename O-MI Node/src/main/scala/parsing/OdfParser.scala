@@ -29,7 +29,6 @@ import parsing.xmlGen.scalaxb.DataRecord
 import parsing.xmlGen.xmlTypes._
 import types.OdfTypes.OdfTreeCollection.seqToOdfTreeCollection
 import types.OdfTypes._
-import types.OdfTypes.{QlmID => OdfQlmID}
 import types.OmiTypes.UserInfo
 import types._
 

@@ -3,7 +3,6 @@ package odf
 
 import scala.collection.immutable.HashMap
 import types.OdfTypes._
-import types.OdfTypes.{QlmID => OdfQlmID }
 
 object NewTypeConverter{
   def convertODF[M <: scala.collection.Map[Path,Node], S <: scala.collection.SortedSet[Path]](

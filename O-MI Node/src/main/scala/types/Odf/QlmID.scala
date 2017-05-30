@@ -45,14 +45,4 @@ case class QlmID(
         ).toMap ++ attributesToDataRecord( attributes )
     )
   }
-  implicit def asOdfQlmID: types.OdfTypes.QlmID ={
-    types.OdfTypes.QlmID(
-      id,
-      idType,
-      tagType,
-      startDate,
-      endDate,
-      HashMap( attributes.toSeq:_* )
-    )
-  } 
 }

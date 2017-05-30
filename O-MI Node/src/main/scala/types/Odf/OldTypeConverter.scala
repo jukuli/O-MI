@@ -2,8 +2,6 @@ package types
 package odf
 
 import types.OdfTypes._
-import types.OdfTypes.{QlmID => OdfQlmID }
-
 object OldTypeConverter{
   def convertOdfObjects( odfObjects: OdfObjects ): ImmutableODF ={
     val objects = Objects(
@@ -62,9 +60,7 @@ object OldTypeConverter{
     InfoItem(
       odfII.path.last,
       convertPath(odfII.path),
-      Vector(QlmID(
-        odfII.path.last
-      )),
+      Vector(),
       odfII.description.map{
         des => convertOdfDescription(des)
       }.toVector,

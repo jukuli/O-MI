@@ -229,7 +229,7 @@ class ParkingAgent(
     log.debug("FindParking called")
     val request = ReadRequest(
         OdfObject(
-          Vector(QlmID(parkingLotsPath.last)),
+          Vector(OdfQlmID(parkingLotsPath.last)),
           parkingLotsPath
        ).createAncestors
       )

@@ -10,7 +10,6 @@ import org.specs2.matcher.XmlMatchers._
 
 import org.specs2._
 import types.OdfTypes._
-import types.OdfTypes.{QlmID =>OdfQlmID}
 
 class OdfTypesTest extends mutable.Specification{
   val testTime : Timestamp = Timestamp.valueOf("2017-05-11 15:44:55")
