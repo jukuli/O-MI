@@ -28,6 +28,7 @@ import types.OdfTypes.OdfTreeCollection.seqToOdfTreeCollection
 import types.OdfTypes._
 import types.OmiTypes.SubLike
 import types._
+import types.odf.Path
 //import types.Path._
 
 /**

@@ -55,21 +55,20 @@ object JavaHelpers{
    * It abstracts path seperators ('/') from error prone actions such as joining
    * two paths or creating new Paths from user input.
    * Path can be used as a sequence via an implicit conversion or _.toSeq
-   */
   @SerialVersionUID(-6357227883745065036L)  
   class Path(pathSeq: Vector[String]) extends Serializable { // TODO: test the Serializable
+   */
     import Path._
     /**
      * Removes extra path elements and holds the Path as Seq[String]
-     */
     val toSeq: Vector[String] = {
       val normalized = pathSeq.filterNot(_ == "")
       normalized.toVector // make sure that it is Vector, hashcode problems with Seq (Array?)
     }
+    */
 
     /**
      * Removes extra path elements and holds the Path as Seq[String]
-     */
     val toArray: Array[String] = {
       val normalized = pathSeq.filterNot(_ == "")
       normalized.toArray // make sure that it is Vector, hashcode problems with Seq (Array?)
@@ -78,22 +77,22 @@ object JavaHelpers{
     def this(pathStr: String) = this{
       pathStr.split("/").toVector
     }
+    */
 
     /**
      * Join two paths.
      * @param otherPath other path to join at the end of this one
      * @return new path with other joined to this path
-     */
     def /(otherPath: Path): Path = Path(this ++ otherPath)
 
     def /(otherPathStr: String): Path = {
       this / Path(otherPathStr)
     }
+     */
 
     /**
      * Get list of ancestors from this path, e.g "/a/b/c/d" => "/a", "/a/b", "/a/b/c", "a/b/c/d"
      * Order is from oldest descending.
-     */
     def getParentsAndSelf: Seq[Path] = this.inits.map(Path(_)).toList.reverse.tail
 
     override def equals(that: Any): Boolean = that match{
@@ -101,11 +100,11 @@ object JavaHelpers{
       case _ => false
     }
     override def hashCode(): Int = this.toSeq.hashCode
+     */
 
     /**
      * Creates a path string which represents this path with '/' seperators.
      * Representation doesn't start nor end with a '/'.
-     */
     override def toString: String = this.mkString("/")
     
     def isAncestorOf( child: Path) : Boolean ={
@@ -120,8 +119,8 @@ object JavaHelpers{
     def length: Int = pathSeq.length
   }
 
-  /** Helper object for Path, contains implicit conversion between Path and Seq[String]
     */
+  /** Helper object for Path, contains implicit conversion between Path and Seq[String]
   object Path {
     def apply(pathStr: String): Path = new Path(pathStr)
     def apply(pathSeq: Seq[String]): Path = new Path(pathSeq.toVector)
@@ -133,3 +132,4 @@ object JavaHelpers{
     implicit def PathAsSeq(p: Path): Vector[String] = p.toSeq
     implicit def SeqAsPath(s: Seq[String]): Path = Path(s.toVector)
   }
+  */

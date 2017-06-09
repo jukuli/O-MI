@@ -7,6 +7,16 @@ import scala.collection.immutable.{ HashMap, Map =>IMap}
 import parsing.xmlGen.scalaxb.DataRecord
 import parsing.xmlGen.xmlTypes.InfoItemType
 
+object InfoItem{
+  def apply(path: Path, values: Vector[Value[Any]] ): InfoItem ={
+    InfoItem(
+      path.last,
+      path,
+      value = values
+    )
+  }
+}
+
 case class InfoItem( 
   val nameAttribute: String,
   val path: Path,

@@ -73,6 +73,7 @@ class MutableODF private[odf](
     this
   }
 
+
   def add( node: Node) : ODF[M,S] ={
     if( !nodes.contains( node.path ) ){
       nodes( node.path) = node

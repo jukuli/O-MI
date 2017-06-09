@@ -82,6 +82,21 @@ trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[P
     }
   }
 
+  def getLeafs: Vector[Node] = {
+    getLeafPaths.flatMap( nodes.get(_)).toVector
+  }
+  def getLeafPaths: Set[Path] = {
+    val ps = paths.toSeq
+    ps.filter{
+      path: Path => 
+        val index = ps.indexOf( path) 
+        val nextIndex = index +1
+        if( nextIndex < ps.size ){
+          val nextPath: Path = ps(nextIndex) 
+          !path.isAncestorOf( nextPath )
+        } else true
+    }.toSet
+  }
   def valuesRemoved: ODF[M,S]
   def createObjectType( obj: Object ): ObjectType ={
     val (objects, infoItems ) = getChilds( obj.path ).partition{
