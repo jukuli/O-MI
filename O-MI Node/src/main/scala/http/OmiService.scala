@@ -42,7 +42,7 @@ import akka.http.scaladsl.model.ws
 import accessControl.AuthAPIService
 import http.Authorization._
 import parsing.OmiParser
-import responses.{CallbackHandler, OmiRequestHandlerBase, RESTHandler, RESTRequest, RemoveSubscription, RequestHandler}
+import responses.{CallbackHandler, RESTHandler, RESTRequest, RemoveSubscription, RequestHandler}
 import responses.CallbackHandler._
 import types.OmiTypes._
 import types.OmiTypes.Callback._
@@ -80,7 +80,12 @@ class OmiServiceImpl(
   } with OmiService {
 
   //example auth API service code in java directory of the project
-  registerApi(new AuthAPIService())
+  if(settings.enableExternalAuthorization){
+    log.info("External Authorization module enabled")
+    log.info(s"External Authorization port ${settings.externalAuthorizationPort}")
+    log.info(s"External Authorization useHttps ${settings.externalAuthUseHttps}")
+    registerApi(new AuthAPIService(settings.externalAuthUseHttps,settings.externalAuthorizationPort))
+  }
 
 
 }
@@ -264,8 +269,9 @@ trait OmiService
 
       //val eitherOmi = OmiParser.parse(requestString)
 
-
-      val originalReq = RawRequestWrapper(requestString, UserInfo(remoteAddress=Some(remote)))
+      //XXX: Corrected namespaces
+      val correctedRequestString = requestString.replace("\"omi.xsd\"", "\"http://www.opengroup.org/xsd/omi/1.0/\"").replace("\"odf.xsd\"", "\"http://www.opengroup.org/xsd/odf/1.0/\"")
+      val originalReq = RawRequestWrapper(correctedRequestString, UserInfo(remoteAddress=Some(remote)))
       val ttlPromise = Promise[ResponseRequest]()
       originalReq.ttl match {
         case ttl: FiniteDuration => ttlPromise.completeWith(
@@ -511,7 +517,7 @@ trait WebSocketOMISupport { self: OmiService =>
     def queueSend(futureResponse: Future[NodeSeq]): Future[QueueOfferResult] = {
       val result = for {
         response <- futureResponse
-        if (response.nonEmpty)
+        //if (response.nonEmpty)
 
           queue <- futureQueue
 
@@ -551,14 +557,17 @@ trait WebSocketOMISupport { self: OmiService =>
 
     val stricted = Flow.fromFunction[ws.Message,Future[String]]{
       case textMessage: ws.TextMessage =>
+        log.debug("Received keep alive for websocket")
         textMessage.textStream.runFold("")(_+_)
       case msg: ws.Message => Future successful ""
     }
     val msgSink = Sink.foreach[Future[String]]{ future: Future[String]  => 
       future.flatMap{ 
+        case "" => //Keep alive 
+          queueSend( Future.successful(  NodeSeq.Empty ) )
         case requestString: String =>
-        val futureResponse: Future[NodeSeq] = handleRequest(hasPermissionTest, requestString, createZeroCallback, user)
-        queueSend(futureResponse)
+          val futureResponse: Future[NodeSeq] = handleRequest(hasPermissionTest, requestString, createZeroCallback, user)
+          queueSend(futureResponse)
       }
     }
 
