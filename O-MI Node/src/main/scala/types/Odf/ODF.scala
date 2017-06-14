@@ -35,12 +35,31 @@ trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[P
     case (p: Path, obj: Object) => obj
   }.toVector
   def get( path: Path): Option[Node] = nodes.get(path)
+  def getSubTreePaths( pathsToGet: Seq[Path]): Seq[Path] = {
+    paths.filter{
+      case path: Path => 
+        pathsToGet.exists{
+          case filter: Path =>
+            filter.isAncestorOf( path ) || filter == path
+        }
+    }.toVector
+  }
   def getSubTreePaths( path: Path): Seq[Path] = {
       paths
         .iteratorFrom(path)
         .takeWhile{ case p: Path => path.isAncestorOf(p) || p == path}
         .toVector
   }
+  def getSubTree( pathsToGet: Seq[Path]): Seq[Node] = {
+    nodes.values.filter{
+      case node: Node => 
+        pathsToGet.exists{
+          case filter: Path =>
+            filter.isAncestorOf( node.path ) || filter == node.path
+        }
+    }.toVector
+  }
+  def getSubTreeAsODF( pathsToGet: Seq[Path]): ODF[M,S]
   
   def getPaths: Seq[Path] = paths.toVector
   def getNodes: Seq[Node] = nodes.values.toVector
@@ -97,6 +116,35 @@ trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[P
         } else true
     }.toSet
   }
+  def pathsOfInfoItemsWithMetaData: Set[Path] ={
+    nodes.values.collect{
+      case ii: InfoItem if ii.metaData.nonEmpty => ii.path
+    }.toSet
+  }
+  def infoItemsWithMetaData: Set[InfoItem] ={
+    nodes.values.collect{
+      case ii: InfoItem if ii.metaData.nonEmpty => ii
+    }.toSet
+  }
+  def nodesWithDescription: Set[Node] ={
+    nodes.values.collect{
+      case ii: InfoItem if ii.description.nonEmpty => ii
+      case obj: Object if obj.description.nonEmpty => obj
+    }.toSet
+  }
+  def pathsOfNodesWithDescription: Set[Path] ={
+    nodes.values.collect{
+      case ii: InfoItem if ii.description.nonEmpty => ii.path
+      case obj: Object if obj.description.nonEmpty => obj.path
+    }.toSet
+  }
+  def pathsWithType( typeStr: String ): Set[Path] ={
+    nodes.values.collect{
+      case ii: InfoItem if ii.typeAttribute == Some( typeStr ) => ii.path
+      case obj: Object if obj.typeAttribute == Some( typeStr ) => obj.path
+    }.toSet
+  }
+
   def valuesRemoved: ODF[M,S]
   def createObjectType( obj: Object ): ObjectType ={
     val (objects, infoItems ) = getChilds( obj.path ).partition{
@@ -135,6 +183,10 @@ trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[P
     }
   }
   override lazy val hashCode: Int = this.nodes.hashCode
+  def intersection( o_df: ODF[M,S] ) : ODF[M,S]
+  def intersectingPaths[A <: scala.collection.Map[Path,Node], B<: scala.collection.SortedSet[Path] ]( o_df: ODF[A,B]): SortedSet[Path] ={
+    paths.intersect(o_df.paths)
+  }
 }
 
 object ODF{

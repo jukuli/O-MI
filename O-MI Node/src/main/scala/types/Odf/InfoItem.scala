@@ -12,7 +12,27 @@ object InfoItem{
     InfoItem(
       path.last,
       path,
-      value = values
+      values = values
+    )
+  }
+  def apply(
+    path: Path,
+    typeAttribute: Option[String],
+    name: Vector[QlmID],
+    description: Vector[Description],
+    values: Vector[Value[Any]],
+    metaData: Option[MetaData],
+    attributes: IMap[String,String]
+  ): InfoItem ={
+    InfoItem(
+      path.last,
+      path,
+      typeAttribute,
+      name,
+      description,
+      values,
+      metaData,
+      attributes
     )
   }
 }
@@ -20,23 +40,31 @@ object InfoItem{
 case class InfoItem( 
   val nameAttribute: String,
   val path: Path,
+  val typeAttribute: Option[String] = None,
   val name: Vector[QlmID] = Vector.empty,
   val description: Vector[Description]= Vector.empty,
-  val value: Vector[Value[Any]]= Vector.empty,
+  val values: Vector[Value[Any]]= Vector.empty,
   val metaData: Option[MetaData] = None,
   val attributes: IMap[String,String] = HashMap.empty
 ) extends Node with Unionable[InfoItem]{
   assert( nameAttribute == path.last )
 
   def union( that: InfoItem ): InfoItem ={
+    val typeMatches = typeAttribute.forall{
+      case typeStr: String => 
+        that.typeAttribute.forall{
+          case otherTypeStr: String => typeStr == otherTypeStr
+        }
+    }
     val pathsMatches = path == that.path
-    assert( nameAttribute == that.nameAttribute && pathsMatches )
+    assert( nameAttribute == that.nameAttribute && pathsMatches && typeMatches )
     new InfoItem(
       nameAttribute,
       path,
+      typeAttribute,
       name ++ that.name,
       description ++ that.description,
-      value ++ that.value,
+      values ++ that.values,
       (metaData, that.metaData) match{
         case (Some( md ), Some( omd )) => Some( md.union(omd) )
         case (md,omd) => md.orElse(omd)
@@ -44,24 +72,7 @@ case class InfoItem(
       attributes ++ that.attributes
     )
   }
-  def copy(
-    nameAttribute: String = this.nameAttribute,
-    path: Path = this.path,
-    name: Vector[QlmID] = this.name,
-    description: Vector[Description]= this.description,
-    value: Vector[Value[Any]]= this.value,
-    metaData: Option[MetaData] = this.metaData,
-    attributes: IMap[String,String] = this.attributes
-  ): InfoItem = new InfoItem(
-    nameAttribute,
-    path,
-    name,
-    description,
-    value,
-    metaData,
-    attributes
-  )
-  def createAncestors: Seq[Node] = {
+  def createAncestos: Seq[Node] = {
         path.getAncestors.map{
           case ancestorPath: Path => 
             new Object(
@@ -101,14 +112,17 @@ case class InfoItem(
       }.toVector,
       this.metaData.map(_.asMetaDataType).toSeq,
       //Seq(QlmIDType(path.lastOption.getOrElse(throw new IllegalArgumentException(s"OdfObject should have longer than one segment path: $path")))),
-      this.value.map{ 
+      this.values.map{ 
         value : Value[Any] => value.asValueType
       }.toSeq,
-      HashMap{
+      HashMap(
         "@name" -> DataRecord(
           nameAttribute
+        ),
+        "@type" -> DataRecord(
+          typeAttribute
         )
-      } ++ attributesToDataRecord( this.attributes )
+      ) ++ attributesToDataRecord( this.attributes )
     )
   }
 

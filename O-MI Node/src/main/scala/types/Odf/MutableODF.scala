@@ -60,7 +60,7 @@ class MutableODF private[odf](
 
   def valuesRemoved : ODF[M,S] ={
     this.nodes.mapValues{
-      case ii: InfoItem => ii.copy( value = Vector() )
+      case ii: InfoItem => ii.copy( values = Vector() )
       case obj: Object => obj 
       case obj: Objects => obj
     }
@@ -113,6 +113,34 @@ class MutableODF private[odf](
     }
     MutableODF(
         (subtree ++ ancestors).toVector
+    )
+  }
+  def intersection( o_df: ODF[M,S] ) : ODF[M,S]={
+    val iPaths = this.intersectingPaths(o_df)
+    MutableODF(
+      iPaths.map{
+        case path: Path => 
+          (nodes.get(path),o_df.nodes.get(path)) match{
+            case ( None, _) => throw new Exception( s"Not found element in intersecting path $path" ) 
+            case (  _, None) => throw new Exception( s"Not found element in intersecting path $path" )
+            case ( Some(ii: InfoItem), Some(oii: InfoItem)) => ii union oii
+            case ( Some(obj: Object), Some(oObj: Object)) => obj union oObj
+            case ( Some(objs: Objects), Some(oObjs: Objects)) => objs union oObjs
+            case ( Some( l), Some( r )) => throw new Exception( s"Found nodes with different types in intersecting path $path" )
+          }
+      }.toVector
+    )
+  
+  }
+  def getSubTreeAsODF( pathsToGet: Seq[Path]): ODF[M,S] = {
+    MutableODF(
+      nodes.values.filter{
+        case node: Node => 
+          pathsToGet.exists{
+            case filter: Path =>
+              filter.isAncestorOf( node.path ) || filter == node.path
+          }
+      }.toVector
     )
   }
 

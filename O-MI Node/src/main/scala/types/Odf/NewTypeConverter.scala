@@ -57,7 +57,7 @@ object NewTypeConverter{
     }
     OdfObject(
       ids,
-      types.Path(obj.path.toSeq),
+      Path(obj.path.toSeq),
       infoItems.toVector,
       objects.toVector,
       obj.description.map( convertDescription ).headOption,
@@ -80,8 +80,8 @@ object NewTypeConverter{
   }
   def convertInfoItem( ii: InfoItem ): OdfInfoItem ={
     OdfInfoItem(
-      types.Path( ii.path.toSeq ),
-      ii.value.map( convertValue ).toVector,
+      Path( ii.path.toSeq ),
+      ii.values.map( convertValue ).toVector,
       ii.description.map( convertDescription ).headOption,
       ii.metaData.map( convertMetaData )
     )

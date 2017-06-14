@@ -60,6 +60,7 @@ object OldTypeConverter{
     InfoItem(
       odfII.path.last,
       convertPath(odfII.path),
+      odfII.typeValue,
       Vector(),
       odfII.description.map{
         des => convertOdfDescription(des)

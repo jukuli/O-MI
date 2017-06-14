@@ -24,6 +24,7 @@ import scala.language.existentials
 
 import parsing.xmlGen.scalaxb.DataRecord
 import parsing.xmlGen.xmlTypes._
+import types.odf.Path
 
 object OdfTreeCollection {
   def apply[T](): OdfTreeCollection[T] = Vector()

@@ -23,6 +23,7 @@ import scala.collection.immutable.HashMap
 import parsing.xmlGen.scalaxb.DataRecord
 import parsing.xmlGen.xmlTypes._
 import types.OdfTypes.OdfTreeCollection._
+import types.odf.Path
 
 /** Class implementing OdfObject. */
 class  OdfObjectImpl(

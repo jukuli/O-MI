@@ -5,7 +5,7 @@ import parsing.xmlGen.scalaxb.DataRecord
 import parsing.xmlGen.xmlTypes._
 case class  Description(
   val text: String,
-  val language: Option[String]
+  val language: Option[String] = None
 ) {
 
   implicit def asDescriptionType : DescriptionType ={

@@ -22,6 +22,7 @@ import parsing.xmlGen.scalaxb.DataRecord
 import parsing.xmlGen.xmlTypes._
 import parsing.xmlGen.{odfDefaultScope, scalaxb, defaultScope}
 import types.OdfTypes.OdfTreeCollection._
+import types.odf.Path
 
 /** Class implementing OdfObjects. */
 class OdfObjectsImpl(

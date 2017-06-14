@@ -29,6 +29,7 @@ import parsing.xmlGen.scalaxb._
 import parsing.xmlGen.scalaxb.XMLStandardTypes._
 import parsing.xmlGen.xmlTypes._
 import types.OdfTypes.OdfTreeCollection._
+import types.odf.Path
 
 /** Class implementing OdfInfoItem. */
 class  OdfInfoItemImpl(

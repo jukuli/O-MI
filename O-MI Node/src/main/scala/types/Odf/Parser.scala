@@ -203,6 +203,7 @@ object ODFParser extends parsing.Parser[OdfParseResult] {
     val ii = new InfoItem(
       item.name,
       npath,
+      item.typeValue,
       item.iname.map{
         qlmIdType => parseQlmID( qlmIdType)
       }.toVector,

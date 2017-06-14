@@ -58,7 +58,7 @@ object JavaHelpers{
   @SerialVersionUID(-6357227883745065036L)  
   class Path(pathSeq: Vector[String]) extends Serializable { // TODO: test the Serializable
    */
-    import Path._
+//    import Path._
     /**
      * Removes extra path elements and holds the Path as Seq[String]
     val toSeq: Vector[String] = {
