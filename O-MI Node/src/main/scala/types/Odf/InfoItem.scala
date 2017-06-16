@@ -19,7 +19,7 @@ object InfoItem{
     path: Path,
     typeAttribute: Option[String],
     name: Vector[QlmID],
-    description: Vector[Description],
+    descriptions: Vector[Description],
     values: Vector[Value[Any]],
     metaData: Option[MetaData],
     attributes: IMap[String,String]
@@ -29,7 +29,7 @@ object InfoItem{
       path,
       typeAttribute,
       name,
-      description,
+      descriptions,
       values,
       metaData,
       attributes
@@ -42,7 +42,7 @@ case class InfoItem(
   val path: Path,
   val typeAttribute: Option[String] = None,
   val name: Vector[QlmID] = Vector.empty,
-  val description: Vector[Description]= Vector.empty,
+  val descriptions: Vector[Description]= Vector.empty,
   val values: Vector[Value[Any]]= Vector.empty,
   val metaData: Option[MetaData] = None,
   val attributes: IMap[String,String] = HashMap.empty
@@ -63,7 +63,7 @@ case class InfoItem(
       path,
       typeAttribute,
       name ++ that.name,
-      description ++ that.description,
+      Description.unionReduce(descriptions ++ that.descriptions).toVector,
       values ++ that.values,
       (metaData, that.metaData) match{
         case (Some( md ), Some( omd )) => Some( md.union(omd) )
@@ -106,7 +106,7 @@ case class InfoItem(
       this.name.map{
         qlmid => qlmid.asQlmIDType
       },
-      this.description.map{ 
+      this.descriptions.map{ 
         case des: Description => 
           des.asDescriptionType 
       }.toVector,

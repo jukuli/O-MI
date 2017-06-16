@@ -60,7 +60,7 @@ object NewTypeConverter{
       Path(obj.path.toSeq),
       infoItems.toVector,
       objects.toVector,
-      obj.description.map( convertDescription ).headOption,
+      obj.descriptions.map( convertDescription ).headOption,
       obj.typeAttribute
     )
   } 
@@ -82,7 +82,7 @@ object NewTypeConverter{
     OdfInfoItem(
       Path( ii.path.toSeq ),
       ii.values.map( convertValue ).toVector,
-      ii.description.map( convertDescription ).headOption,
+      ii.descriptions.map( convertDescription ).headOption,
       ii.metaData.map( convertMetaData )
     )
   }

@@ -14,6 +14,14 @@ class MutableODF private[odf](
   type M = MutableHashMap[Path,Node]
   type S = MutableTreeSet[Path]
   protected[odf] val paths: MutableTreeSet[Path] = MutableTreeSet( nodes.keys.toSeq:_* )(PathOrdering)
+  def getTree( selectingPaths: Seq[Path] ) : ODF[M,S] ={
+    val ancestorsPaths = selectingPaths.flatMap{ p => p.getAncestors }.toSet
+    val subTreePaths = getSubTreePaths( selectingPaths ).toSet
+    val nodesSelected = (subTreePaths ++ ancestorsPaths).flatMap{
+      path => nodes.get( path )
+    }
+    MutableODF( nodesSelected.toSeq )
+  }
   def union( that: ODF[M,S]): ODF[M,S] = {
     val pathIntersection: SortedSet[Path] = this.paths.intersect( that.paths)
     val thatOnlyNodes: Set[Node] = (that.paths -- pathIntersection ).flatMap{
@@ -66,6 +74,31 @@ class MutableODF private[odf](
     }
     this
   }
+  def descriptionsRemoved: ODF[M,S] = {
+    this.nodes.mapValues{
+      case ii: InfoItem => ii.copy( descriptions = Vector() )
+      case obj: Object => obj.copy( descriptions = Vector() )
+      case obj: Objects => obj
+    }
+    this
+  }
+  def metaDatasRemoved: ODF[M,S] ={
+    this.nodes.mapValues{
+      case ii: InfoItem => ii.copy( metaData = None )
+      case obj: Object => obj
+      case obj: Objects => obj
+    }
+  this
+  }
+  def attributesRemoved: ODF[M,S]={
+    this.nodes.mapValues{
+      case ii: InfoItem => ii.copy( typeAttribute = None, attributes = ImmutableHashMap() )
+      case obj: Object => obj.copy( typeAttribute = None, attributes = ImmutableHashMap() )
+      case obj: Objects => obj.copy( attributes = ImmutableHashMap() )
+    }
+  this
+  }
+  
   def removePath( path: Path) : ODF[M,S] ={
     val subtreeP = getSubTreePaths( path )
     this.nodes --=( subtreeP )

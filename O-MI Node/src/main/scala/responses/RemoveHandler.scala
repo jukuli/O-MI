@@ -39,16 +39,24 @@ class RemoveHandler(val singleStores: SingleStores, dbConnection: DB )(implicit 
   protected val log: LoggingAdapter = Logging( system, this)
 
   def handlePathRemove(parentPath: Path): Boolean = {
-    val objects = singleStores.hierarchyStore execute GetTree()
-    val node = objects.get(parentPath)
+    val odf = singleStores.hierarchyStore execute GetTree()
+    val node = odf.get(parentPath)
     node match {
       case Some(_node) => {
 
-        val leafs = getInfoItems(_node).map(_.path)
+        val subPaths = odf.getSubTreePaths(parentPath)
+        val leafPaths = subPaths.filterNot{
+          case path: Path => 
+            subPaths.exists{
+              case otherPath: Path => 
+                path.isAncestorOf( otherPath )
+            }
+        } 
 
         singleStores.hierarchyStore execute TreeRemovePath(parentPath)
 
-        leafs.foreach{path =>
+        leafPaths.foreach{
+          path: Path  =>
           log.info(s"removing $path")
           singleStores.latestStore execute EraseSensorData(path)
         }

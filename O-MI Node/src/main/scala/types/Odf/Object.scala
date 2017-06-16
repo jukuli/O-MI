@@ -11,7 +11,7 @@ case class Object(
   val id: Vector[QlmID],
   val path: Path,
   val typeAttribute: Option[String] = None,
-  val description: Seq[Description] = Vector.empty,
+  val descriptions: Seq[Description] = Vector.empty,
   val attributes: IMap[String,String] = HashMap.empty
 ) extends Node with Unionable[Object] {
   assert( id.nonEmpty )
@@ -31,7 +31,7 @@ case class Object(
           else Some( t + " " + ot)
         case (t, ot) => t.orElse(ot)
       },
-      description ++ that.description,
+      Description.unionReduce(descriptions ++ that.descriptions),
       attributes ++ that.attributes
     )
     
@@ -72,7 +72,7 @@ case class Object(
         attributes = Map.empty
       )),*/
       id.map(_.asQlmIDType), //
-      description.map( des => des.asDescriptionType ).toSeq,
+      descriptions.map( des => des.asDescriptionType ).toSeq,
       infoitems,
       objects,
       attributes = (

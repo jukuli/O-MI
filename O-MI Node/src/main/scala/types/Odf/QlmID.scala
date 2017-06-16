@@ -16,6 +16,17 @@ case class QlmID(
   val endDate: Option[Timestamp] =  None,
   val attributes: Map[String,String] =  HashMap.empty
 ) {
+  def union( other: QlmID ) : QlmID ={
+    assert( id == other.id )
+    QlmID(
+      id,
+      optionUnion( idType, other.idType ),
+      optionUnion( tagType, other.tagType ),
+      optionUnion( startDate, other.startDate ),
+      optionUnion( endDate, other.endDate ),
+      attributes ++ other.attributes
+    )
+  }
   
   implicit def asQlmIDType: QlmIDType = {
     val idTypeAttr: Seq[(String,DataRecord[Any])] = idType.map{

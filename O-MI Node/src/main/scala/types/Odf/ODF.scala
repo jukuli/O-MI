@@ -24,6 +24,7 @@ trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[P
   protected[odf] def paths : S //= TreeSet( nodes.keys.toSeq:_* )(PathOrdering)
   //def copy( nodes : scala.collection.Map[Path,Node] ): ODF[M,S]
 
+  def getTree( paths: Seq[Path] ) : ODF[M,S]
   def union( that: ODF[M,S]): ODF[M,S] 
   def removePaths( removedPaths: Iterable[Path]) : ODF[M,S]  
   def immutable: ImmutableODF
@@ -128,14 +129,14 @@ trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[P
   }
   def nodesWithDescription: Set[Node] ={
     nodes.values.collect{
-      case ii: InfoItem if ii.description.nonEmpty => ii
-      case obj: Object if obj.description.nonEmpty => obj
+      case ii: InfoItem if ii.descriptions.nonEmpty => ii
+      case obj: Object if obj.descriptions.nonEmpty => obj
     }.toSet
   }
   def pathsOfNodesWithDescription: Set[Path] ={
     nodes.values.collect{
-      case ii: InfoItem if ii.description.nonEmpty => ii.path
-      case obj: Object if obj.description.nonEmpty => obj.path
+      case ii: InfoItem if ii.descriptions.nonEmpty => ii.path
+      case obj: Object if obj.descriptions.nonEmpty => obj.path
     }.toSet
   }
   def pathsWithType( typeStr: String ): Set[Path] ={
@@ -146,6 +147,9 @@ trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[P
   }
 
   def valuesRemoved: ODF[M,S]
+  def descriptionsRemoved: ODF[M,S]
+  def metaDatasRemoved: ODF[M,S]
+  def attributesRemoved: ODF[M,S]
   def createObjectType( obj: Object ): ObjectType ={
     val (objects, infoItems ) = getChilds( obj.path ).partition{
       case obj: Object => true

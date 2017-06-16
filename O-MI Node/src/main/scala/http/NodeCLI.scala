@@ -29,7 +29,7 @@ import akka.pattern.ask
 import akka.util.{ByteString, Timeout}
 import database._
 import responses.{RemoveSubscription, RemoveHandler, RemoveHandlerT }
-import types.Path
+import types.odf.Path
 
 /** Object that contains all commands of InternalAgentCLI.
  */

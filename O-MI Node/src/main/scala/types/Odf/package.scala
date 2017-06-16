@@ -34,4 +34,7 @@ package object odf {
         }else{  key -> DataRecord(None,Some(s"$key"),value) }
    }.toMap
  }
+  def optionUnion[A]( left: Option[A], right: Option[A] ): Option[A]  ={
+    right.orElse( left )
+  }
 }
