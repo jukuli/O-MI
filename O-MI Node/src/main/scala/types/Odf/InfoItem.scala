@@ -48,6 +48,34 @@ case class InfoItem(
   val attributes: IMap[String,String] = HashMap.empty
 ) extends Node with Unionable[InfoItem]{
   assert( nameAttribute == path.last )
+  def intersection( that: InfoItem ): InfoItem ={
+    val typeMatches = typeAttribute.forall{
+      case typeStr: String => 
+        that.typeAttribute.forall{
+          case otherTypeStr: String => typeStr == otherTypeStr
+        }
+    }
+    val pathsMatches = path == that.path
+    assert( nameAttribute == that.nameAttribute && pathsMatches && typeMatches )
+    new InfoItem(
+      nameAttribute,
+      path,
+      that.typeAttribute.orElse( typeAttribute),
+      if( that.name.nonEmpty ){
+        QlmID.unionReduce( that.name ++ name).toVector.filter{ case id => id.id.nonEmpty}
+      } else Vector.empty,
+      if( that.descriptions.nonEmpty ){
+        Description.unionReduce(that.descriptions ++ descriptions).toVector.filter{ case desc => desc.text.nonEmpty}
+      } else Vector.empty,
+      values,
+      (metaData, that.metaData) match{
+        case (Some( md ), Some( omd )) => Some( omd.union(md) )
+        case ( Some(md), None) => Some( MetaData( Vector()))
+        case (None, _) => None 
+      },
+      that.attributes ++ attributes 
+    )
+  }
 
   def union( that: InfoItem ): InfoItem ={
     val typeMatches = typeAttribute.forall{
@@ -62,7 +90,7 @@ case class InfoItem(
       nameAttribute,
       path,
       typeAttribute,
-      name ++ that.name,
+      QlmID.unionReduce(name ++ that.name).toVector,
       Description.unionReduce(descriptions ++ that.descriptions).toVector,
       values ++ that.values,
       (metaData, that.metaData) match{

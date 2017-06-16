@@ -25,10 +25,8 @@ import slick.driver.JdbcProfile
 import slick.lifted.{Index, ForeignKeyQuery, ProvenShape}
 //import scala.collection.JavaConversions.iterableAsScalaIterable
 import types.OdfTypes.OdfTreeCollection.seqToOdfTreeCollection
-import types.OdfTypes._
 import types.OmiTypes.SubLike
-import types._
-import types.odf.Path
+import types.odf._
 //import types.Path._
 
 /**
@@ -51,7 +49,7 @@ case class DBValue(
   valueType: String,
     valueId: Option[Long] = None
 ) {
-  def toOdf: OdfValue[Any] = OdfValue(value, valueType, timestamp)
+  def toOdf: Value[Any] = Value(value, valueType, timestamp)
 }
 
 case class SubValue(
@@ -61,7 +59,7 @@ case class SubValue(
                      value: String,
                      valueType: String
                      ) {
-  def toOdf: OdfValue[Any] = OdfValue(value, valueType, timestamp)
+  def toOdf: Value[Any] = Value(value, valueType, timestamp)
 }
 
 trait OmiNodeTables extends DBBase {
@@ -97,21 +95,20 @@ trait OmiNodeTables extends DBBase {
     pollRefCount: Int,
     isInfoItem: Boolean 
   ) {
-    def descriptionOdfOption: Option[OdfDescription] =
-      if (description.nonEmpty) Some(OdfDescription(description))
-      else None
+    def descriptionVector: Vector[Description] =
+      if (description.nonEmpty) Vector(Description(description))
+      else Vector()
 
 
-    def toOdfObject: OdfObject = toOdfObject()
-    def toOdfObject(infoitems: Iterable[OdfInfoItem] = Iterable(), objects: Iterable[OdfObject] = Iterable()): OdfObject =
-      OdfObject(Seq(OdfQlmID(path.last)),path, infoitems, objects, descriptionOdfOption, None)
+    def toObject(): Object =
+      Object(Vector(QlmID(path.last)),path, descriptions = descriptionVector)
 
-    def toOdfObjects: OdfObjects = OdfObjects()
+    def toOdfObjects: Objects = Objects()
 
 
-    def toOdfInfoItem: OdfInfoItem = toOdfInfoItem()
-    def toOdfInfoItem(values: Iterable[OdfValue[Any]] = Iterable()): OdfInfoItem =
-      OdfInfoItem(path, values, descriptionOdfOption, None)
+    def toInfoItem: InfoItem = toInfoItem()
+    def toInfoItem(values: Iterable[Value[Any]] = Iterable()): InfoItem =
+      InfoItem(path.last,path, values = values, descriptions = descriptionVector)
   }
 
   implicit lazy val DBNodeOrdering = Ordering.by[DBNode, Int](_.leftBoundary)

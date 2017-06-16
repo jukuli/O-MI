@@ -25,9 +25,8 @@ import org.slf4j.LoggerFactory
 //import slick.driver.H2Driver.api._
 import slick.jdbc.meta.MTable
 import types.OdfTypes.OdfTreeCollection.seqToOdfTreeCollection
-import types.OdfTypes._
 import types.OmiTypes.{OmiReturn, Returns}
-import types._
+import types.odf._
 
 /**
  * Read-write interface methods for db tables.
@@ -49,7 +48,7 @@ trait DBCachedReadWrite extends DBReadWrite{
       case pathToIds => 
         val p2IDset: Map[Path,Set[Int]] = pathToIds.flatMap{
           case (p,hid) => 
-            p.getParentsAndSelf.map{ path => 
+            p.getAncestorsAndSelf.map{ path => 
               (path,hid)
             }
         }.groupBy{ 
@@ -92,7 +91,7 @@ trait DBCachedReadWrite extends DBReadWrite{
   /**
    * Used to set many values efficiently to the database.
    */
-  def writeMany(infos: Seq[OdfInfoItem]): Future[OmiReturn] = {
+  def writeMany(infos: Seq[InfoItem]): Future[OmiReturn] = {
     val pathToWrite: Seq[DBValue] = infos.flatMap {
       case info =>
         pathToHierarchyID.get(info.path).flatMap {
@@ -106,7 +105,7 @@ trait DBCachedReadWrite extends DBReadWrite{
                       //create new timestamp if option is None
                       odfVal.timestamp,
                       odfVal.value.toString,
-                      odfVal.typeValue
+                      odfVal.typeAttribute
                     )
                 }
             }
@@ -117,7 +116,7 @@ trait DBCachedReadWrite extends DBReadWrite{
 
     val idNotFound = infos.filter{ case info => pathToHierarchyID.get(info.path).isEmpty}
     val writeAction = if( idNotFound.nonEmpty ){
-      val pathsData: Map[Path, Seq[OdfValue[Any]]] = idNotFound.map(ii => (ii.path -> ii.values.sortBy(_.timestamp.getTime))).toMap
+      val pathsData: Map[Path, Seq[Value[Any]]] = idNotFound.map(ii => (ii.path -> ii.values.sortBy(_.timestamp.getTime))).toMap
 
       val writeNewAction = for {
         addObjectsAction <- DBIO.sequence(
@@ -140,7 +139,7 @@ trait DBCachedReadWrite extends DBReadWrite{
               //create new timestamp if option is None
               odfVal.timestamp,
               odfVal.value.toString,
-              odfVal.typeValue)
+              odfVal.typeAttribute)
           }
         }
         updateAction <- latestValues ++= dbValues
@@ -152,7 +151,7 @@ trait DBCachedReadWrite extends DBReadWrite{
             case p2IDs : Seq[(types.Path, Int)] if p2IDs.nonEmpty => 
               val p2set: Map[Path,Set[Int]] = p2IDs.flatMap{
                 case (p,hid) => 
-                  p.getParentsAndSelf.map{ path => 
+                  p.getAncestorsAndSelf.map{ path => 
                     (path,hid)
                   }
               }.groupBy{ 
@@ -191,12 +190,12 @@ trait DBCachedReadWrite extends DBReadWrite{
   }
 
   def getNBetween(
-    requests: Iterable[OdfNode],
+    requests: Iterable[Node],
     beginO: Option[Timestamp],
     endO: Option[Timestamp],
     newestO: Option[Int],
     oldestO: Option[Int]
-  ): Future[Option[OdfObjects]] = {
+  ): Future[Option[ImmutableODF]] = {
     //log.debug("Current path to id map:\n" + pathToHierarchyID.mkString("\n"))
       //log.debug("Request:\n"+requests.mkString("\n"))
       val infoitemIDs = requests.flatMap {
@@ -282,15 +281,14 @@ trait DBCachedReadWrite extends DBReadWrite{
       val toObjects = dbioAction.map{
         case dbvals if dbvals.nonEmpty =>
           //log.debug("DBValue results:\n" +dbvals.mkString("\n"))
-          Some(
-          dbvals.groupBy(_.hierarchyId).flatMap{
-            case (id, dbvalues) => 
-              hierarchyIDToPath.get(id).map{
-                path =>
-                  OdfInfoItem( path, dbvalues.map(_.toOdf) )
-              }
-            }.foldLeft(OdfObjects()){ case (l, r) => l.union(r.createAncestors) }
-            )
+          val resultIIs =  dbvals.groupBy(_.hierarchyId).flatMap{
+              case (id, dbvalues) => 
+                hierarchyIDToPath.get(id).map{
+                  path:Path =>
+                    InfoItem( path, dbvalues.map(_.toOdf) )
+                }
+            }
+          Some( ImmutableODF(resultIIs) )
           case dbvals => None
       }
       db.run(toObjects.transactionally)

@@ -32,7 +32,6 @@ import types.OdfTypes.OdfTreeCollection
 import types.OdfTypes.OdfTreeCollection.seqToOdfTreeCollection
 import types.odf._
 import types.OmiTypes.OmiReturn
-import types.Path
 import http.{ActorSystemContext, Settings, Storages}
 
 
@@ -174,7 +173,7 @@ class SingleStores(protected val settings: OmiConfigExtension) {
 
   def getMetaData(path: Path) : Option[MetaData] = {
     (hierarchyStore execute GetTree()).get(path).collect{
-      case InfoItem(_,_,_,_,_,Some(mData),_) => mData
+      case InfoItem(_,_,_,_,_,_,Some(mData),_) => mData
     }
   }
 

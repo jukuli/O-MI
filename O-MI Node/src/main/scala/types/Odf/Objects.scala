@@ -17,6 +17,12 @@ case class Objects(
   def createAncestors: Seq[Node] = {
     Vector()
   }
+  def intersection( that: Objects ) : Objects ={
+    new Objects(
+      that.version.orElse(version),//What if versions are differents?
+      that.attributes ++ attributes
+    )
+  }
   def union( that: Objects ) : Objects ={
     new Objects(
       version.orElse(that.version),//What if versions are differents?

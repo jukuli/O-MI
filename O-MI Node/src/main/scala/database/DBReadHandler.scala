@@ -13,10 +13,10 @@ import analytics.{AddUser, AddRead, AnalyticsStore}
 import scala.xml.{NodeSeq, PrettyPrinter}
 //import akka.http.StatusCode
 
-import types.odf.{ NewTypeConverter, OldTypeConverter}
 import types.OdfTypes._
 import types.OmiTypes._
 import http.{ActorSystemContext, Storages}
+import types.odf._
 
 trait DBReadHandler extends DBHandlerBase{
   /** Method for handling ReadRequest.
@@ -56,11 +56,39 @@ trait DBReadHandler extends DBHandlerBase{
            s"ttl: ${default.ttl} )"
           )
 
-         val leafs = getLeafs(read.odf)
+         val odf: ImmutableODF = OldTypeConverter.convertOdfObjects( read.odf )
+         val metadataStoreTree = (singleStores.hierarchyStore execute GetTree())
+         val odfWithStaticData = metadataStoreTree.intersection( odf.valuesRemoved )
+         val (notFoundInCache, leafs) = odf.getLeafs.partition{
+           case node: Node => odfWithStaticData.contains(node.path)
+         }
+         val odfWithValuesO: Future[Option[ImmutableODF]] = dbConnection.getNBetween(leafs, read.begin, read.end, read.newest, read.oldest)
 
+         odfWithValuesO.map {
+           case Some(odfWithValues) =>
+             val foundODF = odfWithStaticData.valuesRemoved.union(odfWithValues)
+             val foundPathsInDB = odfWithValues.getPaths 
+             val notFoundInDB = leafs.collect{
+                case node: Node if !foundPathsInDB.contains(node.path) =>
+                  node
+             }
+             val notFoundNodes = (notFoundInCache ++ notFoundInDB).map( _.path ).flatMap{ case p: Path => odf.get(p) }
+             val nfResults = if( notFoundNodes.nonEmpty ){
+               Vector(
+                Results.NotFoundPaths( NewTypeConverter.convertODF(ImmutableODF( notFoundNodes)))
+               )
+             } else Vector() 
+             val results = Vector(
+               Results.Read(NewTypeConverter.convertODF(foundODF))
+             ) ++ nfResults
+             ResponseRequest( results )
+           case None =>
+             ResponseRequest( Vector(Results.NotFoundPaths(read.odf) ) )
+         }
 
          // NOTE: Might go off sync with tree or values if the request is large,
          // but it shouldn't be a big problem
+         /*
          val metadataTree = NewTypeConverter.convertODF((singleStores.hierarchyStore execute GetTree()))
 
          //Find nodes from the request that HAVE METADATA OR DESCRIPTION REQUEST
@@ -77,7 +105,6 @@ trait DBReadHandler extends DBHandlerBase{
            nodesWithoutMetadata.map( objs => metadataTree.intersect( objs ) )
           
          //Get values from database
-         val objectsWithValuesO: Future[Option[OdfObjects]] = dbConnection.getNBetween(leafs, read.begin, read.end, read.newest, read.oldest)
 
          objectsWithValuesO.map {
            case Some(objectsWithValues) =>
@@ -120,7 +147,7 @@ trait DBReadHandler extends DBHandlerBase{
              ResponseRequest( omiResults )
            case None =>
              ResponseRequest( Vector(Results.NotFoundPaths(read.odf) ) )
-         }
+         }*/
      }
    }
 }

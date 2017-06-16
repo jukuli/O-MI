@@ -18,12 +18,29 @@ case class Object(
   assert( path.length >= 2 )
   assert( id.map(_.id).toSet.contains(path.last) )
 
+  def intersection( that: Object ): Object ={
+    val pathsMatches = path == that.path 
+    val containSameId = id.map( _.id ).toSet.intersect( that.id.map( _.id).toSet ).nonEmpty
+    assert( containSameId && pathsMatches)
+    new Object(
+      if( that.id.nonEmpty ){
+        QlmID.unionReduce( that.id ++ id).toVector.filter{ case id => id.id.nonEmpty}
+      } else Vector.empty,
+      path,
+      that.typeAttribute.orElse(typeAttribute),
+      if( that.descriptions.nonEmpty ){
+        Description.unionReduce(that.descriptions ++ descriptions).toVector.filter{ case desc => desc.text.nonEmpty}
+      } else Vector.empty,
+      that.attributes ++ attributes
+    )
+    
+  }
   def union( that: Object ): Object ={
     val pathsMatches = path == that.path 
     val containSameId = id.map( _.id ).toSet.intersect( that.id.map( _.id).toSet ).nonEmpty
     assert( containSameId && pathsMatches)
     new Object(
-      id ++ that.id,//TODO: Some kind unioning needed. If only  one has attributes and other doesn,t, we should compain them to one.
+      QlmID.unionReduce(id ++ that.id).toVector,
       path,
       (typeAttribute, that.typeAttribute) match {
         case (Some( t ), Some( ot ) ) =>
@@ -31,7 +48,7 @@ case class Object(
           else Some( t + " " + ot)
         case (t, ot) => t.orElse(ot)
       },
-      Description.unionReduce(descriptions ++ that.descriptions),
+      Description.unionReduce(descriptions ++ that.descriptions).toVector,
       attributes ++ that.attributes
     )
     

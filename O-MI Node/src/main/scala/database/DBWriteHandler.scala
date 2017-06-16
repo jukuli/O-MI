@@ -31,8 +31,6 @@ import types.odf.{ NewTypeConverter, OldTypeConverter}
 
 trait DBWriteHandler extends DBHandlerBase {
 
-
-
   import context.{system}//, dispatcher}
   protected def handleWrite( write: WriteRequest ) : Future[ResponseRequest] = {
     val odfObjects = write.odf

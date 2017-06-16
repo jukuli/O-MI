@@ -24,9 +24,8 @@ import org.slf4j.LoggerFactory
 //import slick.driver.H2Driver.api._
 import slick.jdbc.meta.MTable
 import types.OdfTypes.OdfTreeCollection.seqToOdfTreeCollection
-import types.OdfTypes._
 import types.OmiTypes.{Returns,OmiReturn}
-import types._
+import types.odf._
 
 /**
  * Read-write interface methods for db tables.
@@ -81,7 +80,7 @@ trait DBReadWrite extends DBReadOnly with OmiNodeTables {
       insertId <- hierarchyWithInsertId += DBNode(None, fullpath, left, right, fullpath.length, "", 0, isInfoItem)
     } yield (fullpath, insertId) ).transactionally
 
-    val parentsAndPath = path.getParentsAndSelf
+    val parentsAndPath = path.getAncestorsAndSelf
 
     val foundPathsI = hierarchyNodes filter (_.path inSet parentsAndPath) map (_.path) result
     // difference between all and found

@@ -22,8 +22,7 @@ import scala.language.postfixOps
 import org.slf4j.LoggerFactory
 //import slick.driver.H2Driver.api._
 import types.OdfTypes.OdfTreeCollection.seqToOdfTreeCollection
-import types.OdfTypes._
-import types._
+import types.odf._
 import http.OmiNodeContext
 
 /**

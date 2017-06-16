@@ -101,6 +101,7 @@ trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[P
       (new Objects()).asObjectsType(objectTypes) 
     }
   }
+  def contains( path: Path ): Boolean = paths.contains(path)
 
   def getLeafs: Vector[Node] = {
     getLeafPaths.flatMap( nodes.get(_)).toVector

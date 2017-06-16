@@ -9,11 +9,12 @@ import parsing.xmlGen.xmlTypes.{ObjectsType, ObjectType}
 import parsing.xmlGen.{odfDefaultScope, scalaxb, defaultScope}
 
 case class ImmutableODF private[odf] (
-
   protected[odf] val nodes: ImmutableHashMap[Path,Node] 
 ) extends ODF[ImmutableHashMap[Path,Node],ImmutableTreeSet[Path]] {
+
   type M = ImmutableHashMap[Path,Node]
   type S = ImmutableTreeSet[Path]
+
   protected[odf] val paths: ImmutableTreeSet[Path] = ImmutableTreeSet( nodes.keys.toSeq:_* )(PathOrdering)
 
   def getTree( selectingPaths: Seq[Path] ) : ODF[M,S] ={
@@ -114,9 +115,9 @@ case class ImmutableODF private[odf] (
           (nodes.get(path),o_df.nodes.get(path)) match{
             case ( None, _) => throw new Exception( s"Not found element in intersecting path $path" ) 
             case (  _, None) => throw new Exception( s"Not found element in intersecting path $path" )
-            case ( Some(ii: InfoItem), Some(oii: InfoItem)) => ii union oii
-            case ( Some(obj: Object), Some(oObj: Object)) => obj union oObj
-            case ( Some(objs: Objects), Some(oObjs: Objects)) => objs union oObjs
+            case ( Some(ii: InfoItem), Some(oii: InfoItem)) => ii intersection oii
+            case ( Some(obj: Object), Some(oObj: Object)) => obj intersection oObj
+            case ( Some(objs: Objects), Some(oObjs: Objects)) => objs intersection oObjs
             case ( Some( l), Some( r )) => throw new Exception( s"Found nodes with different types in intersecting path $path" )
           }
       }.toVector
