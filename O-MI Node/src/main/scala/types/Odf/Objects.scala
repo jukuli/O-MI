@@ -11,6 +11,10 @@ case class Objects(
   val attributes: Map[String,String] = HashMap.empty
 ) extends Node {
   val path: Path = new Path( "Objects")
+  def hasStaticData: Boolean = attributes.nonEmpty 
+  def update( that: Objects ) : Objects ={
+    Objects( that.version.orElse(version), attributes ++ that.attributes)
+  }
   def createParent: Node = {
     this
   }

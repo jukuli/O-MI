@@ -17,7 +17,26 @@ case class Object(
   assert( id.nonEmpty )
   assert( path.length >= 2 )
   assert( id.map(_.id).toSet.contains(path.last) )
+  def update( that: Object ): Object ={
+    val pathsMatches = path == that.path 
+    val containSameId = id.map( _.id ).toSet.intersect( that.id.map( _.id).toSet ).nonEmpty
+    assert( containSameId && pathsMatches)
+    new Object(
+      QlmID.unionReduce( id ++ that.id).toVector,
+      path,
+      that.typeAttribute.orElse(typeAttribute),
+      Description.unionReduce(descriptions ++ that.descriptions).toVector,
+      attributes ++ that.attributes
+    )
+    
+  }
 
+  def hasStaticData: Boolean ={
+    attributes.nonEmpty ||
+    id.length > 1 ||
+    typeAttribute.nonEmpty ||
+    descriptions.nonEmpty 
+  }
   def intersection( that: Object ): Object ={
     val pathsMatches = path == that.path 
     val containSameId = id.map( _.id ).toSet.intersect( that.id.map( _.id).toSet ).nonEmpty

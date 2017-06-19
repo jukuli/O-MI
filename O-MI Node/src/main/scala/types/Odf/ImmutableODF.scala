@@ -12,10 +12,26 @@ case class ImmutableODF private[odf] (
   protected[odf] val nodes: ImmutableHashMap[Path,Node] 
 ) extends ODF[ImmutableHashMap[Path,Node],ImmutableTreeSet[Path]] {
 
+  type GeneralODF = ODF[scala.collection.Map[Path,Node], scala.collection.SortedSet[Path] ]
   type M = ImmutableHashMap[Path,Node]
   type S = ImmutableTreeSet[Path]
 
   protected[odf] val paths: ImmutableTreeSet[Path] = ImmutableTreeSet( nodes.keys.toSeq:_* )(PathOrdering)
+  def update( that: GeneralODF ): ImmutableODF ={
+    ImmutableODF(
+    nodes.mapValues{
+      case node: Node => 
+        (node,that.get(node.path)) match {
+          case ( ii: InfoItem, Some( iiu: InfoItem) ) => ii.update(iiu)
+          case ( obj: Object, Some( ou: Object)) => obj.update(ou)
+          case ( objs: Objects, Some( objsu: Objects)) => objs.update( objsu)
+          case ( n, None) => n
+          case ( n, Some(a)) => throw new Exception( "Missmatching types in ODF when updating.")
+        }
+    }.values.toVector
+    )
+  }
+
 
   def getTree( selectingPaths: Seq[Path] ) : ODF[M,S] ={
     val ancestorsPaths = selectingPaths.flatMap{ p => p.getAncestors }.toSet

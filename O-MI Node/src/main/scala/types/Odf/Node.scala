@@ -8,4 +8,5 @@ trait Node{
   def createParent: Node 
   def attributes: Map[String,String]
   def path: Path
+  def hasStaticData: Boolean 
 }

@@ -11,9 +11,24 @@ import parsing.xmlGen.{odfDefaultScope, scalaxb, defaultScope}
 class MutableODF private[odf](
   protected[odf] val nodes: MutableHashMap[Path,Node] = MutableHashMap.empty
 ) extends ODF[MutableHashMap[Path,Node],MutableTreeSet[Path]] {
+  type GeneralODF = ODF[scala.collection.Map[Path,Node], scala.collection.SortedSet[Path] ]
   type M = MutableHashMap[Path,Node]
   type S = MutableTreeSet[Path]
   protected[odf] val paths: MutableTreeSet[Path] = MutableTreeSet( nodes.keys.toSeq:_* )(PathOrdering)
+  def update( that: GeneralODF ): MutableODF ={
+    nodes.mapValues{
+      case node: Node => 
+        (node,that.get(node.path)) match {
+          case ( ii: InfoItem, Some( iiu: InfoItem) ) => ii.update(iiu)
+          case ( obj: Object, Some( ou: Object)) => obj.update(ou)
+          case ( objs: Objects, Some( objsu: Objects)) => objs.update( objsu)
+          case ( n, None) => n
+          case ( n, Some(a)) => throw new Exception( "Missmatching types in ODF when updating.")
+        }
+    }
+   this
+  }
+
   def getTree( selectingPaths: Seq[Path] ) : ODF[M,S] ={
     val ancestorsPaths = selectingPaths.flatMap{ p => p.getAncestors }.toSet
     val subTreePaths = getSubTreePaths( selectingPaths ).toSet

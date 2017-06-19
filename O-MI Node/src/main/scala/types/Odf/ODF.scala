@@ -72,6 +72,7 @@ trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[P
       case p: Path => path.isParentOf(p) 
     }
   }
+  def nodesWithStaticData: Vector[Node] = nodes.values.filter( _.hasStaticData ).toVector
   def getSubTree( path: Path): Seq[Node] = {
     (
       //nodes.get(path) ++ 
@@ -147,6 +148,7 @@ trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[P
     }.toSet
   }
 
+  def update( that: ODF[M,S] ): ODF[M,S]
   def valuesRemoved: ODF[M,S]
   def descriptionsRemoved: ODF[M,S]
   def metaDatasRemoved: ODF[M,S]

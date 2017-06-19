@@ -48,6 +48,28 @@ case class InfoItem(
   val attributes: IMap[String,String] = HashMap.empty
 ) extends Node with Unionable[InfoItem]{
   assert( nameAttribute == path.last )
+  def updateValues( vals: Vector[Value[Any]] ) = this.copy(values = vals)
+  def update( that: InfoItem ): InfoItem={
+    val pathsMatches = path == that.path
+    assert( nameAttribute == that.nameAttribute && pathsMatches)
+    InfoItem(
+      nameAttribute,
+      path,
+      that.typeAttribute.orElse( typeAttribute ),
+      QlmID.unionReduce( that.name ++ name).toVector.filter{ case id => id.id.nonEmpty},
+      Description.unionReduce(that.descriptions ++ descriptions).toVector.filter{ case desc => desc.text.nonEmpty},
+      if( that.values.nonEmpty ) that.values else values,
+      that.metaData.flatMap{
+        case md: MetaData => 
+          metaData.map{
+            case current: MetaData => 
+              current update md 
+          }.orElse( that.metaData )
+      }.orElse( metaData ),
+      if( that.attributes.nonEmpty ) attributes ++ that.attributes else attributes
+    )
+
+  }
   def intersection( that: InfoItem ): InfoItem ={
     val typeMatches = typeAttribute.forall{
       case typeStr: String => 
@@ -154,4 +176,11 @@ case class InfoItem(
     )
   }
 
+  def hasStaticData: Boolean ={
+    attributes.nonEmpty ||
+    metaData.nonEmpty ||
+    name.nonEmpty ||
+    typeAttribute.nonEmpty ||
+    descriptions.nonEmpty 
+  }
 }
