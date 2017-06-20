@@ -39,13 +39,13 @@ import akka.stream.scaladsl._
 import akka.stream._
 import akka.stream.ActorMaterializer
 import akka.http.scaladsl.model.ws
+
 import accessControl.AuthAPIService
 import http.Authorization._
-import parsing.OmiParser
 import responses.{CallbackHandler, RESTHandler, RESTRequest, RemoveSubscription, RequestHandler}
 import responses.CallbackHandler._
-import types.OmiTypes._
-import types.OmiTypes.Callback._
+import types.omi._
+import types.omi.Callback._
 import types.{ParseError}
 import types.odf._
 import database.{GetTree, SingleStores}
@@ -184,8 +184,7 @@ trait OmiService
             }.map{
               nodes: Seq[Node] => 
                 val odf = ImmutableODF( nodes)
-                val objs = NewTypeConverter.convertODF( odf )
-                ReadRequest(objs,user0 = UserInfo(remoteAddress = Some(user)))
+                ReadRequest(odf,user0 = UserInfo(remoteAddress = Some(user)))
             }
               asReadRequest match {
                 case Some(readReq) =>

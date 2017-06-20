@@ -31,6 +31,7 @@ import types.OdfTypes.OdfTreeCollection.seqToOdfTreeCollection
 import types.OdfTypes._
 import types.OmiTypes.UserInfo
 import types._
+import types.odf.Path
 
 /** Parser for data in O-DF format*/
 object OdfParser extends Parser[OdfParseResult] {

@@ -10,7 +10,7 @@ import akka.actor.Extension
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigException._
 import types.Path
-import types.OmiTypes.OmiRequestType._
+import types.omi.OmiRequestType._
 
 
  

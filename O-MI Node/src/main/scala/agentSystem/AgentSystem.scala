@@ -40,7 +40,7 @@ import responses.CallbackHandler
 import database.{DB, SingleStores, DBReadWrite}
 import http.CLICmds._
 import http.OmiNodeContext
-import types.OmiTypes.WriteRequest
+import types.omi.WriteRequest
 import types.odf.Path
 import http.{ActorSystemContext, Actors, Settings, Storages, OmiNodeContext, Callbacking}
 import AgentResponsibilities._

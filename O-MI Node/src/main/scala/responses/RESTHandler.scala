@@ -18,7 +18,6 @@ import scala.xml.XML
 
 import database._
 import parsing.xmlGen.{defaultScope, scalaxb, xmlTypes}
-import types.OdfTypes._
 import types.odf._
 import http.{ActorSystemContext, Storages}
 

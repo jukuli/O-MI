@@ -14,7 +14,7 @@ import scala.xml.{NodeSeq, PrettyPrinter}
 //import akka.http.StatusCode
 
 import types.OdfTypes._
-import types.OmiTypes._
+import types.omi._
 import http.{ActorSystemContext, Storages}
 import types.odf._
 
@@ -56,7 +56,7 @@ trait DBReadHandler extends DBHandlerBase{
            s"ttl: ${default.ttl} )"
           )
 
-         val odf: ImmutableODF = OldTypeConverter.convertOdfObjects( read.odf )
+         val odf: ImmutableODF =  read.odf 
          val metadataStoreTree = (singleStores.hierarchyStore execute GetTree())
          val odfWithStaticData = metadataStoreTree.intersection( odf.valuesRemoved )
          val (notFoundInCache, leafs) = odf.getLeafs.partition{
@@ -75,11 +75,11 @@ trait DBReadHandler extends DBHandlerBase{
              val notFoundNodes = (notFoundInCache ++ notFoundInDB).map( _.path ).flatMap{ case p: Path => odf.get(p) }
              val nfResults = if( notFoundNodes.nonEmpty ){
                Vector(
-                Results.NotFoundPaths( NewTypeConverter.convertODF(ImmutableODF( notFoundNodes)))
+                Results.NotFoundPaths( ImmutableODF( notFoundNodes))
                )
              } else Vector() 
              val results = Vector(
-               Results.Read(NewTypeConverter.convertODF(foundODF))
+               Results.Read(foundODF.immutable)
              ) ++ nfResults
              ResponseRequest( results )
            case None =>

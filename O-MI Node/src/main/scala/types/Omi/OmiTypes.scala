@@ -12,7 +12,7 @@
  +    limitations under the License.                                              +
  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 package types
-package OmiTypes
+package omi
 
 import java.lang.Iterable
 import java.sql.Timestamp
@@ -36,8 +36,7 @@ import parsing.xmlGen.scalaxb.DataRecord
 import parsing.xmlGen.{omiDefaultScope, scalaxb, xmlTypes}
 import parsing.xmlGen.xmlTypes._
 import responses.CallbackHandler
-import types.OdfTypes._
-import types.odf.Path
+import types.odf._
 
 trait JavaOmiRequest{
   def callbackAsJava(): JIterable[Callback]
@@ -101,8 +100,8 @@ sealed trait PermissiveRequest
  * Request that contains O-DF, (read, write, response)
  */
 sealed trait OdfRequest extends OmiRequest{
-  def odf : OdfObjects
-  def replaceOdf( nOdf: OdfObjects ) : OdfRequest
+  def odf : ImmutableODF
+  def replaceOdf( nOdf: ImmutableODF ) : OdfRequest
   def odfAsDataRecord = DataRecord(None, Some("Objects"), odf.asXML)
 }
 
@@ -113,7 +112,7 @@ sealed trait JavaRequestIDRequest{
  * Request that contains requestID(s) (read, cancel) 
  */
 sealed trait RequestIDRequest extends JavaRequestIDRequest{
-  def requestIDs : OdfTreeCollection[RequestID]
+  def requestIDs : Vector[RequestID]
   def requestIDsAsJava : JIterable[RequestID] = asJavaIterable(requestIDs)
 }
 
@@ -165,7 +164,7 @@ class RawRequestWrapper(val rawRequest: String, private val user0: UserInfo) ext
   val ttl: Duration = (for {
       ttlNodeSeq <- Option(omiEnvelope.attrs("ttl"))
       head <- ttlNodeSeq.headOption
-      ttl = parsing.OmiParser.parseTTL(head.text.toDouble)
+      ttl = OMIParser.parseTTL(head.text.toDouble)
     } yield ttl
   ) getOrElse parseError("couldn't parse ttl")
 
@@ -186,7 +185,7 @@ class RawRequestWrapper(val rawRequest: String, private val user0: UserInfo) ext
   /**
    * Get the parsed request. Message is parsed only once because of laziness.
    */
-  lazy val parsed: OmiParseResult = parsing.OmiParser.parse(rawRequest)
+  lazy val parsed: OmiParseResult = OMIParser.parse(rawRequest)
 
   /**
    * Access the request easily and leave responsibility of error handling to someone else.
@@ -245,7 +244,7 @@ trait SubLike {
  * One-time-read request
  **/
 case class ReadRequest(
-  odf: OdfObjects ,
+  odf: ImmutableODF ,
   begin: Option[Timestamp ] = None,
   end: Option[Timestamp ] = None,
   newest: Option[Int ] = None,
@@ -258,7 +257,7 @@ case class ReadRequest(
 ) extends OmiRequest  with OdfRequest{
   user = user0
  // def this(
- // odf: OdfObjects ,
+ // odf: ImmutableODF ,
  // begin: Option[Timestamp ] = None,
  // end: Option[Timestamp ] = None,
  // newest: Option[Int ] = None,
@@ -290,7 +289,7 @@ case class ReadRequest(
     )
   }
   implicit def asOmiEnvelope : xmlTypes.OmiEnvelopeType = requestToEnvelope(asReadRequest, ttlAsSeconds)
-  def replaceOdf( nOdf: OdfObjects ) = copy(odf = nOdf)
+  def replaceOdf( nOdf: ImmutableODF ) = copy(odf = nOdf)
 
   def withSenderInformation(si:SenderInformation):OmiRequest = this.copy( senderInformation = Some(si))
 }
@@ -300,7 +299,7 @@ case class ReadRequest(
  **/
 case class PollRequest(
   callback: Option[Callback] = None,
-  requestIDs: OdfTreeCollection[Long ] = OdfTreeCollection.empty,
+  requestIDs: Vector[Long ] = Vector.empty,
   ttl: Duration = 10.seconds,
   private val user0: UserInfo = UserInfo(),
   senderInformation: Option[SenderInformation] = None
@@ -330,7 +329,7 @@ case class PollRequest(
  **/
 case class SubscriptionRequest(
   interval: Duration,
-  odf: OdfObjects,
+  odf: ImmutableODF,
   newest: Option[Int ] = None,
   oldest: Option[Int ] = None,
   callback: Option[Callback] = None,
@@ -360,7 +359,7 @@ case class SubscriptionRequest(
   )
   implicit def asOmiEnvelope : xmlTypes.OmiEnvelopeType= requestToEnvelope(asReadRequest, ttlAsSeconds)
   def withSenderInformation(si:SenderInformation):OmiRequest = this.copy( senderInformation = Some(si))
-  def replaceOdf( nOdf: OdfObjects ) = copy(odf = nOdf)
+  def replaceOdf( nOdf: ImmutableODF ) = copy(odf = nOdf)
 }
 
 
@@ -368,7 +367,7 @@ case class SubscriptionRequest(
  * Write request
  **/
 case class WriteRequest(
-  odf: OdfObjects,
+  odf: ImmutableODF,
   callback: Option[Callback] = None,
   ttl: Duration = 10.seconds,
   private val user0: UserInfo = UserInfo(),
@@ -395,12 +394,12 @@ case class WriteRequest(
       ).flatten.toMap
   )
   implicit def asOmiEnvelope : xmlTypes.OmiEnvelopeType = requestToEnvelope(asWriteRequest, ttlAsSeconds)
-  def replaceOdf( nOdf: OdfObjects ) = copy(odf = nOdf)
+  def replaceOdf( nOdf: ImmutableODF ) = copy(odf = nOdf)
   def withSenderInformation(si:SenderInformation):OmiRequest = this.copy( senderInformation = Some(si))
 }
 
 case class CallRequest(
-  odf: OdfObjects,
+  odf: ImmutableODF,
   callback: Option[Callback] = None,
   ttl: Duration = 10.seconds,
   private val user0: UserInfo = UserInfo(),
@@ -427,12 +426,12 @@ case class CallRequest(
       ).flatten.toMap
   )
   implicit def asOmiEnvelope : xmlTypes.OmiEnvelopeType = requestToEnvelope(asCallRequest, ttlAsSeconds)
-  def replaceOdf( nOdf: OdfObjects ) = copy(odf = nOdf)
+  def replaceOdf( nOdf: ImmutableODF ) = copy(odf = nOdf)
   def withSenderInformation(si:SenderInformation):OmiRequest = this.copy( senderInformation = Some(si))
 }
 
 case class DeleteRequest(
-  odf: OdfObjects,
+  odf: ImmutableODF,
   callback: Option[Callback] = None,
   ttl: Duration = 10.seconds,
   private val user0: UserInfo = UserInfo(),
@@ -459,14 +458,14 @@ case class DeleteRequest(
       ).flatten.toMap
   )
   implicit def asOmiEnvelope : xmlTypes.OmiEnvelopeType = requestToEnvelope(asDeleteRequest, ttlAsSeconds)
-  def replaceOdf( nOdf: OdfObjects ) = copy(odf = nOdf)
+  def replaceOdf( nOdf: ImmutableODF ) = copy(odf = nOdf)
   def withSenderInformation(si:SenderInformation):OmiRequest = this.copy( senderInformation = Some(si))
 }
 /**
  * Cancel request, for cancelling subscription.
  **/
 case class CancelRequest(
-  requestIDs: OdfTreeCollection[Long ] = OdfTreeCollection.empty,
+  requestIDs: Vector[Long ] = Vector.empty,
   ttl: Duration = 10.seconds,
   private val user0: UserInfo = UserInfo(),
   senderInformation: Option[SenderInformation] = None
@@ -494,7 +493,7 @@ trait JavaResponseRequest{
  * Response request, contains result for other requests
  **/
 class ResponseRequest(
-  val results: OdfTreeCollection[OmiResult],
+  val results: Vector[OmiResult],
   val ttl: Duration,
   val callback : Option[Callback] = None,
   private val user0: UserInfo = UserInfo(),
@@ -504,7 +503,7 @@ class ResponseRequest(
 
   def resultsAsJava(): JIterable[OmiResult] = asJavaIterable(results)
   def copy(
-    results: OdfTreeCollection[OmiResult] = this.results,
+    results: Vector[OmiResult] = this.results,
     ttl: Duration = this.ttl,
     callback: Option[Callback] = this.callback,
     senderInformation: Option[SenderInformation] = this.senderInformation
@@ -512,8 +511,10 @@ class ResponseRequest(
 
   def withCallback = cb => this.copy(callback = cb)
 
-  def odf : OdfObjects = results.foldLeft(OdfObjects()){
-    _ union _.odf.getOrElse(OdfObjects())
+  def odf : Option[ImmutableODF] = results.flatMap{
+    case result: OmiResult => result.odf
+  }.reduceOption{
+    ( l: ImmutableODF,r: ImmutableODF) => l.union(r).immutable 
   }
 
   implicit def asResponseListType : xmlTypes.ResponseListType =
@@ -549,8 +550,8 @@ class ResponseRequest(
   }.toVector
   def odfResultsToSingleWrite: WriteRequest ={
     WriteRequest(
-      odfResultsToWrites.foldLeft(OdfObjects()){
-        case (objects, write) => objects.union(write.odf)
+      odfResultsToWrites.foldLeft(ImmutableODF()){
+        case (objects, write) => objects.union(write.odf).immutable
       },
       None,
       ttl
@@ -561,7 +562,7 @@ class ResponseRequest(
 
 object ResponseRequest{
   def apply(
-    results: OdfTreeCollection[OmiResult],
+    results: Vector[OmiResult],
     ttl: Duration = 10.seconds
   ) : ResponseRequest = new ResponseRequest( results, ttl)
 }

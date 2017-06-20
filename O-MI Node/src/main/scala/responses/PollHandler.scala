@@ -27,8 +27,8 @@ import scala.xml.NodeSeq
 import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
-import types.OdfTypes._
-import types.OmiTypes._
+import types.odf._
+import types.omi._
 import types._
 import http.{ActorSystemContext, Actors, Settings, OmiConfigExtension }
 
@@ -48,15 +48,15 @@ trait PollHandler{
       Future.sequence(poll.requestIDs.map { id : RequestID=>
 
       val objectsF: Future[ Any /* Option[OdfObjects] */ ] = (subscriptionManager ? PollSubscription(id))
-        .mapTo[Option[OdfObjects]]
+        .mapTo[Option[ImmutableODF]]
       objectsF.recoverWith{
         case e: Throwable => Future.failed(new RuntimeException(
         s"Error when trying to poll subscription: ${e.getMessage}"))
       }
 
       objectsF.map{
-        case Some(objects: OdfObjects) =>
-          Results.Poll(id, objects)
+        case Some(odf: ImmutableODF) =>
+          Results.Poll(id, odf)
         case None =>
           Results.NotFoundRequestIDs(Vector(id))
         //case Failure(e) =>

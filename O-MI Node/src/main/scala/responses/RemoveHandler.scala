@@ -24,8 +24,7 @@ import akka.event.{LogSource, Logging, LoggingAdapter}
 import akka.actor.ActorSystem
 
 import database._
-import types.OdfTypes._
-import types._
+import types.odf._
 import http.{ActorSystemContext, Storages}
 
 trait RemoveHandlerT{

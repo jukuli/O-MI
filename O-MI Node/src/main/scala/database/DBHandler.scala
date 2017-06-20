@@ -20,8 +20,8 @@ import responses.CallbackHandler
 import responses.CallbackHandler._
 import types.OdfTypes.OdfTreeCollection.seqToOdfTreeCollection
 import types.OdfTypes._
-import types.OmiTypes._
-import types.Path
+import types.omi._
+import types.odf._
 import analytics.{AddWrite, AnalyticsStore}
 import agentSystem.{AgentName, AgentResponsibilities}
 import agentSystem.AgentEvents._

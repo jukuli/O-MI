@@ -3,8 +3,7 @@ package agentSystem
 import scala.collection.mutable.{Map => MutableMap}
 import scala.collection.immutable.{Map => ImmutableMap}
 
-import types.Path
-import types.OmiTypes._
+import types.omi._
 import types.odf._
 
 object AgentResponsibilities{
@@ -26,7 +25,7 @@ class AgentResponsibilities(){
   }
   def splitCallAndWriteToResponsible( request: OdfRequest ) : ImmutableMap[Option[AgentName], OdfRequest] ={
     def filter: RequestFilter => Boolean = createFilter(request)
-    val odf = OldTypeConverter.convertOdfObjects(request.odf)
+    val odf = request.odf
       
     val agentToResponsibilities = pathsToResponsible.values.flatMap{
       case AgentResponsibility(
@@ -56,8 +55,7 @@ class AgentResponsibilities(){
     )
     agentOptionToODF.mapValues{
       case odf => 
-        val objects = NewTypeConverter.convertODF( odf )
-        request.replaceOdf( objects)
+        request.replaceOdf( odf)
     }
   }
     /*
@@ -237,7 +235,7 @@ class AgentResponsibilities(){
     else checkResponsibilityFor(Some(agentName), request) 
   }
   def checkResponsibilityFor(optionAgentName: Option[AgentName], request:OdfRequest): Boolean ={
-    val odf = OldTypeConverter.convertOdfObjects(request.odf)
+    val odf = request.odf
     val leafPathes = odf.getLeafPaths
     //println( s"Pathes of leaf nodes:\n$leafPathes")
     val pathToResponsible: Seq[(Path,Option[AgentName])]= leafPathes.map{

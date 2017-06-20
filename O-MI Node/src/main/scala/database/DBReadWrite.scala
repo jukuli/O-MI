@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory
 //import slick.driver.H2Driver.api._
 import slick.jdbc.meta.MTable
 import types.OdfTypes.OdfTreeCollection.seqToOdfTreeCollection
-import types.OmiTypes.{Returns,OmiReturn}
+import types.omi.{Returns,OmiReturn}
 import types.odf._
 
 /**

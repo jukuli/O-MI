@@ -29,10 +29,8 @@ import database._
 import http.CLICmds.{ ListSubsCmd, SubInfoCmd}
 import http.{OmiConfigExtension}
 import responses.CallbackHandler.{ MissingConnection, CallbackFailure}
-import types.OdfTypes.OdfTreeCollection.seqToOdfTreeCollection
-import types.OdfTypes._
-import types.OmiTypes._
 import types._
+import types.omi._
 import types.odf._
 
 /**
@@ -311,17 +309,17 @@ class SubscriptionManager(
         case ii: InfoItem => ii
       }
 
-      val datas = singleStores.latestStore execute LookupSensorDatas(subscribedInfoItems.map(_.path))
+      val datas = singleStores.latestStore execute LookupSensorDatas(subscribedInfoItems.map(_.path).toVector)
       val infoItemsWithValues: Vector[InfoItem] = datas.map {
         case (iPath, oValue) =>
-          InfoItem(iPath, Iterable(oValue))
+          InfoItem(iPath, Vector(oValue))
       }
 
       val resultOdf = hTree.intersection( ImmutableODF( infoItemsWithValues ) )
 
-      val succResult = Vector(Results.Success(OdfTreeCollection(iSub.id), Some(NewTypeConverter.convertODF(resultOdf))))
+      val succResult = Vector(Results.Success(Vector(iSub.id), Some(resultOdf.immutable)))
 
-      val failedResults = if (failures.nonEmpty) Vector(Results.SubscribedPathsNotFound(failures)) else Vector.empty
+      val failedResults = if (failures.nonEmpty) Vector(Results.SubscribedPathsNotFound(failures.toVector)) else Vector.empty
 
       val responseTTL = iSub.interval
       val response = ResponseRequest((succResult ++ failedResults).toVector, responseTTL)
@@ -404,7 +402,7 @@ class SubscriptionManager(
             singleStores.subStore execute AddEventSub(
               EventSub(
                 newId,
-                OdfTypes.getLeafs(subscription.odf).iterator.map(_.path).toSeq,
+                subscription.odf.getLeafPaths.toVector,
                 endTime,
                 callback
               )
@@ -415,7 +413,7 @@ class SubscriptionManager(
           case dur@Duration(-2, duration.SECONDS) => throw new NotImplementedError("Interval -2 not supported") //subscription for new node
           case dur: FiniteDuration if dur.gteq(minIntervalDuration) => {
             val iSub = IntervalSub(newId,
-              OdfTypes.getLeafs(subscription.odf).iterator.map(_.path).toSeq,
+              subscription.odf.getLeafPaths.toVector,
               endTime,
               callback,
               dur,
@@ -439,7 +437,7 @@ class SubscriptionManager(
           }
         }
         case None => {
-          val paths = OdfTypes.getLeafs(subscription.odf).iterator.map(_.path).toSeq
+          val paths = subscription.odf.getLeafPaths.toVector
           subscription.interval match {
             case Duration(-1, duration.SECONDS) => {
               //event poll sub

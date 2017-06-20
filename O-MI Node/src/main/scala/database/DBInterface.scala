@@ -28,10 +28,8 @@ import parsing.xmlGen.xmlTypes.MetaDataType
 import slick.backend.DatabaseConfig
 //import slick.driver.H2Driver.api._
 import slick.driver.JdbcProfile
-import types.OdfTypes.OdfTreeCollection
-import types.OdfTypes.OdfTreeCollection.seqToOdfTreeCollection
 import types.odf._
-import types.OmiTypes.OmiReturn
+import types.omi.OmiReturn
 import http.{ActorSystemContext, Settings, Storages}
 
 
@@ -118,7 +116,7 @@ class SingleStores(protected val settings: OmiConfigExtension) {
   def buildOdfFromValues(items: Seq[(Path,Value[Any])]): ImmutableODF = {
 
     val infoItems = items map { case (path, value) =>
-      InfoItem(path, OdfTreeCollection(value))
+      InfoItem(path, Vector(value))
     }
     ImmutableODF(infoItems)
   }
@@ -155,16 +153,16 @@ class SingleStores(protected val settings: OmiConfigExtension) {
         if (valueShouldBeUpdated(oldValue, newValue)) {
           // NOTE: This effectively discards incoming data that is older than the latest received value
           if (oldValue.value != newValue.value) {
-            Some(ChangeEvent(InfoItem(path, Iterable(newValue))))
+            Some(ChangeEvent(InfoItem(path, Vector(newValue))))
           } else {
             // Value is same as the previous
-            Some(SameValueEvent(InfoItem(path, Iterable(newValue))))
+            Some(SameValueEvent(InfoItem(path, Vector(newValue))))
           }
 
         } else None  // Newer data found
 
       case None =>  // no data was found => new sensor
-        val newInfo = InfoItem(path, Iterable(newValue))
+        val newInfo = InfoItem(path, Vector(newValue))
         Some(AttachEvent(newInfo))
     }
 

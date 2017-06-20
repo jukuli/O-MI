@@ -29,6 +29,7 @@ import types.OdfTypes._
 import types.OmiTypes._
 import types.OmiTypes.Callback._ // implicit: String => Callback
 import types.ParseError._
+import types.odf.Path
 import types._
 
 /** Parser for messages with O-MI protocol*/

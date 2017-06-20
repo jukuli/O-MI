@@ -28,7 +28,7 @@ import akka.event.{LogSource, Logging, LoggingAdapter}
 
 import analytics.AnalyticsStore
 import database._
-import types.OmiTypes._
+import types.omi._
 import http.{ActorSystemContext, Actors, OmiConfigExtension }
 import http.ContextConversion._
 import scala.language.implicitConversions

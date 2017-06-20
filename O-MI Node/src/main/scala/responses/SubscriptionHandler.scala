@@ -27,7 +27,8 @@ import scala.xml.NodeSeq
 import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
-import types.OmiTypes._
+import types.omi._
+import types.odf._
 import types._
 import http.{ActorSystemContext, Actors, Settings, OmiConfigExtension }
 

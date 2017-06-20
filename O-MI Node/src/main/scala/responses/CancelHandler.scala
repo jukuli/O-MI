@@ -22,7 +22,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-import types.OmiTypes._
+import types.omi._
 import types._
 //import scala.collection.JavaConverters._ //JavaConverters provide explicit conversion methods
 //import scala.collection.JavaConversions.asJavaIterator

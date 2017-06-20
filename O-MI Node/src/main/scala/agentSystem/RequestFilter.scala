@@ -1,5 +1,5 @@
 package agentSystem
-import types.OmiTypes._
+import types.omi._
 
   object RequestFilter{
     def apply( str: String ): RequestFilter ={

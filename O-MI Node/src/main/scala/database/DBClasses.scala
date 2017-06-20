@@ -25,7 +25,7 @@ import slick.driver.JdbcProfile
 import slick.lifted.{Index, ForeignKeyQuery, ProvenShape}
 //import scala.collection.JavaConversions.iterableAsScalaIterable
 import types.OdfTypes.OdfTreeCollection.seqToOdfTreeCollection
-import types.OmiTypes.SubLike
+import types.omi.SubLike
 import types.odf._
 //import types.Path._
 

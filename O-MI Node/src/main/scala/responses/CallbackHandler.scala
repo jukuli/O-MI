@@ -32,7 +32,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.ws._
 import akka.stream.scaladsl._
 import akka.stream._
-import types.OmiTypes._
+import types.omi._
 
 import http.{OmiConfigExtension, Storages, OmiNodeContext, Settings, ActorSystemContext, Actors}
 import CallbackHandler._

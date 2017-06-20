@@ -21,7 +21,7 @@ import akka.http.scaladsl.model.HttpHeader
 import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.server.Directives.optionalHeaderValue
 
-import types.OmiTypes._
+import types.omi._
 import http.Authorization.{UnauthorizedEx, AuthorizationExtension, CombinedTest, PermissionTest}
 
 // TODO: maybe move to Authorization package

@@ -28,7 +28,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.config.Config
 import types.OdfTypes._
-import types.OmiTypes._
+import types.omi._
 import types.Path
 /**
  Commands that can be received from InternalAgentLoader.

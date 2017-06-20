@@ -25,7 +25,7 @@ import database._
 import http.Authorization.{UnauthorizedEx, AuthorizationExtension, CombinedTest}
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.server.Directives.extract
-import types.OmiTypes._
+import types.omi._
 import types.odf._
 
 
@@ -55,7 +55,7 @@ trait AuthApi {
   def isAuthorizedForRequest(httpRequest: HttpRequest, omiRequest: OmiRequest): AuthorizationResult = {
     omiRequest match {
       case odfRequest: OdfRequest =>
-        val odf = OldTypeConverter.convertOdfObjects(odfRequest.odf )
+        val odf = odfRequest.odf 
 
         val paths = odf.getLeafPaths // todo: refactor getLeafs to member lazy to re-use later
 
@@ -147,7 +147,7 @@ trait AuthApiProvider extends AuthorizationExtension {
 
           newOdfOpt match {
             case Some(newOdf) if (newOdf.getObjects.nonEmpty) =>
-              val oldTypeOdf = NewTypeConverter.convertODF( newOdf )
+              val oldTypeOdf = newOdf 
               orgOmiRequest.unwrapped flatMap {
                 case r: ReadRequest         => Success(r.copy(odf = oldTypeOdf))
                 case r: SubscriptionRequest => Success(r.copy(odf = oldTypeOdf))

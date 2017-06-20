@@ -23,7 +23,7 @@ import akka.http.scaladsl.model.RemoteAddress
 import http.Authorization.{UnauthorizedEx, AuthorizationExtension, CombinedTest, PermissionTest}
 import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.server.Directives.extractClientIP
-import types.OmiTypes._
+import types.omi._
 
 // TODO: maybe move to Authorization package
 

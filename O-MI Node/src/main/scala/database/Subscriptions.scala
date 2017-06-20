@@ -25,7 +25,7 @@ import scala.concurrent.duration.{FiniteDuration, Duration}
 import akka.actor.Cancellable
 import org.prevayler._
 import types.odf._
-import types.OmiTypes._
+import types.omi._
 
 
 sealed trait SavedSub {

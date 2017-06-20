@@ -3,7 +3,6 @@ package database
 import java.lang.{Iterable => JavaIterable}
 
 
-
 import scala.collection.immutable.IndexedSeq
 import scala.collection.mutable.{Map => MutableMap}
 import scala.collection.immutable.Map
@@ -15,6 +14,7 @@ import scala.xml.XML
 import akka.actor.{Actor, ActorRef, ActorSystem, ActorLogging}
 import akka.pattern.ask
 import akka.util.Timeout
+
 import database._
 import parsing.xmlGen
 import parsing.xmlGen._
@@ -22,8 +22,7 @@ import parsing.xmlGen.xmlTypes.MetaDataType
 import responses.CallbackHandler
 import responses.CallbackHandler._
 import types.OdfTypes.OdfTreeCollection.seqToOdfTreeCollection
-import types.OmiTypes._
-import types.Path
+import types.omi._
 import analytics.{AddWrite, AnalyticsStore}
 import agentSystem.{AgentName}
 import types.odf._
@@ -32,14 +31,14 @@ trait DBWriteHandler extends DBHandlerBase {
 
   import context.{system}//, dispatcher}
   protected def handleWrite( write: WriteRequest ) : Future[ResponseRequest] = {
-    val odf = OldTypeConverter.convertOdfObjects(write.odf)
+    val odf = write.odf
     val infoItems : Seq[InfoItem] = odf.getInfoItems // getInfoItems(odfObjects)
 
     // save only changed values
     val pathValueOldValueTuples = for {
       info <- infoItems.toSeq
       path = info.path
-      oldValueOpt = singleStores.latestStore execute LookupSensorData(OldTypeConverter.convertPath(path))
+      oldValueOpt = singleStores.latestStore execute LookupSensorData(path)
       value <- info.values
     } yield (path, value, oldValueOpt)
 
@@ -164,7 +163,7 @@ trait DBWriteHandler extends DBHandlerBase {
         .toOption.getOrElse(Duration.Inf)
 
     log.debug(s"Sending data to event sub: $id.")
-    val responseRequest = Responses.Poll(id, NewTypeConverter.convertODF(odf), responseTTL)
+    val responseRequest = Responses.Poll(id, odf.immutable, responseTTL)
     log.info(s"Sending in progress; Subscription subId:$id addr:$callbackAddr interval:-1")
     //log.debug("Send msg:\n" + xmlMsg)
 
