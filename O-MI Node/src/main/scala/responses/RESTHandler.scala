@@ -22,26 +22,26 @@ import types.OdfTypes._
 import types.odf._
 import http.{ActorSystemContext, Storages}
 
-object RESTHandler{
-
 sealed trait RESTRequest{def path: Path} // path is OdfNode path
-case class Value(path: Path)      extends RESTRequest
-case class MetaData(path: Path)   extends RESTRequest
-case class DescriptionReq(path: Path)extends RESTRequest
+case class ValueRequest(path: Path)      extends RESTRequest
+case class MetaDataRequest(path: Path)   extends RESTRequest
+case class DescriptionRequest(path: Path)extends RESTRequest
 case class ObjId(path: Path)      extends RESTRequest
 case class InfoName(path: Path)   extends RESTRequest
 case class NodeReq(path: Path)    extends RESTRequest
 
 object RESTRequest{
     def apply(path: Path): RESTRequest = path.lastOption match {
-      case attr @ Some("value")      => Value(path.init)
-      case attr @ Some("MetaData")   => MetaData(path.init)
-      case attr @ Some("description")=> DescriptionReq(path.init)
+      case attr @ Some("value")      => ValueRequest(path.init)
+      case attr @ Some("MetaData")   => MetaDataRequest(path.init)
+      case attr @ Some("description")=> DescriptionRequest(path.init)
       case attr @ Some("id")         => ObjId(path.init)
       case attr @ Some("name")       => InfoName(path.init)
       case _                         => NodeReq(path)
     }
 }
+object RESTHandler{
+
 
   /**
    * Generates ODF containing only children of the specified path's (with path as root)
@@ -61,10 +61,10 @@ object RESTRequest{
    */
   def handle(request: RESTRequest)(implicit singleStores: SingleStores): Option[Either[String, xml.NodeSeq]] = {
     request match {
-      case Value(path) =>
+      case ValueRequest(path) =>
         singleStores.latestStore execute LookupSensorData(path) map { Left apply _.value.toString }
 
-      case MetaData(path) =>
+      case MetaDataRequest(path) =>
         singleStores.getMetaData(path) map { metaData =>
           Right(scalaxb.toXML[xmlTypes.MetaDataType](metaData.asMetaDataType, Some("odf"), Some("MetaData"),defaultScope))
         }
@@ -90,7 +90,7 @@ object RESTRequest{
       case InfoName(path) =>
         Some(Right(<InfoItem xmlns="odf.xsd" name={path.last}><name>{path.last}</name></InfoItem>))
         // TODO: support for multiple name
-      case DescriptionReq(path) =>
+      case DescriptionRequest(path) =>
         val desc = (singleStores.hierarchyStore execute GetTree()).get(path).collect{
           case obj: Object => obj.descriptions
           case ii: InfoItem => ii.descriptions

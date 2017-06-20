@@ -5,7 +5,7 @@ import scala.collection.immutable.{Map => ImmutableMap}
 
 import types.Path
 import types.OmiTypes._
-import types.OdfTypes._
+import types.odf._
 
 object AgentResponsibilities{
 
@@ -19,14 +19,48 @@ class AgentResponsibilities(){
   val pathsToResponsible: MutableMap[Path, AgentResponsibility] = MutableMap.empty
   def splitRequestToResponsible( request: OmiRequest ) :ImmutableMap[Option[AgentName], OmiRequest] ={
     request match {
-      case write: WriteRequest => splitWriteToResponsible(write)
-      case call: CallRequest => splitCallToResponsible(call)
+      case write: WriteRequest => splitCallAndWriteToResponsible(write)
+      case call: CallRequest => splitCallAndWriteToResponsible(call)
       case other: OmiRequest =>ImmutableMap( None -> other)
     }
   }
-  def splitCallToResponsible( request: CallRequest ) : ImmutableMap[Option[AgentName], OdfRequest] ={
+  def splitCallAndWriteToResponsible( request: OdfRequest ) : ImmutableMap[Option[AgentName], OdfRequest] ={
     def filter: RequestFilter => Boolean = createFilter(request)
+    val odf = OldTypeConverter.convertOdfObjects(request.odf)
       
+    val agentToResponsibilities = pathsToResponsible.values.flatMap{
+      case AgentResponsibility(
+        agentName: AgentName,
+        path: Path,
+        requestFilter: RequestFilter
+      ) if  filter(requestFilter) =>
+        odf.get(path).map{
+          case node: Node =>
+            agentName -> odf.getSubTreeAsODF( node.path)
+        }
+    }.groupBy( _._1 ).mapValues{
+      case tupleSeq =>
+        tupleSeq.map( _._2 ).reduceOption( _ union _ )
+    }.collect{
+      case (agent, Some(odf) ) =>agent -> odf
+    }
+
+    val pathsInResponsibilities = agentToResponsibilities.values.flatMap{
+      case odf =>  odf.getPaths
+    }.toSet
+    val agentOptionToODF: Map[ Option[AgentName], ImmutableODF ] = ImmutableMap(
+      (agentToResponsibilities.map{
+        case ( agent, odf ) => 
+          Some(agent) -> odf.immutable
+      }.toVector ++ Vector(Option.empty[String] -> odf.cutOut(pathsInResponsibilities))):_*
+    )
+    agentOptionToODF.mapValues{
+      case odf => 
+        val objects = NewTypeConverter.convertODF( odf )
+        request.replaceOdf( objects)
+    }
+  }
+    /*
     val odf = request.odf
     val objectsWithMetadata = odf.objectsWithMetadata.map{
       case obj: OdfObject =>
@@ -92,8 +126,8 @@ class AgentResponsibilities(){
     //println( s"$responsibleToRequest")
     responsibleToRequest
 
-  }
-  
+  }*/
+  /*
   def splitWriteToResponsible( request: WriteRequest ) : ImmutableMap[Option[AgentName], OdfRequest] ={
     def filter: RequestFilter => Boolean = createFilter(request)
       
@@ -158,7 +192,7 @@ class AgentResponsibilities(){
     //println( s"$responsibleToRequest")
     responsibleToRequest
 
-  }
+  }*/
 
   
   private def createFilter( request: OdfRequest ): RequestFilter => Boolean ={
@@ -203,19 +237,19 @@ class AgentResponsibilities(){
     else checkResponsibilityFor(Some(agentName), request) 
   }
   def checkResponsibilityFor(optionAgentName: Option[AgentName], request:OdfRequest): Boolean ={
-    val odf = request.odf
-    val leafPathes = getLeafs(odf).map(_.path)
+    val odf = OldTypeConverter.convertOdfObjects(request.odf)
+    val leafPathes = odf.getLeafPaths
     //println( s"Pathes of leaf nodes:\n$leafPathes")
     val pathToResponsible: Seq[(Path,Option[AgentName])]= leafPathes.map{
       case path: Path =>
-        val allPaths : Seq[Path] = path.getParentsAndSelf.sortBy(_.length).reverse
+        val allPaths : Seq[Path] = path.getAncestorsAndSelf.sortBy(_.length).reverse
         val responsibility : Option[AgentResponsibility] = allPaths.find{
           case _path => pathsToResponsible.get(_path).nonEmpty
         }.flatMap{ case _path => pathsToResponsible.get(_path) }
         
         val responsible = responsibility.map(_.agentName)
         (path, responsible)
-    }
+    }.toSeq
     //println( s"Pathes to responsible Agent's name:\n$leafPathes")
 
     val responsibleToPairSeq: ImmutableMap[Option[AgentName], Seq[(Path, Option[AgentName])]]= pathToResponsible.groupBy{

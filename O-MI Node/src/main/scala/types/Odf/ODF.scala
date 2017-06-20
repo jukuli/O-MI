@@ -24,6 +24,11 @@ trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[P
   protected[odf] def paths : S //= TreeSet( nodes.keys.toSeq:_* )(PathOrdering)
   //def copy( nodes : scala.collection.Map[Path,Node] ): ODF[M,S]
 
+  def isEmpty:Boolean
+  def nonEmpty:Boolean
+  def isRootOnly: Boolean = isEmpty
+  def cutOut( that: ODF[M,S] ): ODF[M,S]
+  def cutOut( cutPaths: Set[Path] ): ODF[M,S]
   def getTree( paths: Seq[Path] ) : ODF[M,S]
   def union( that: ODF[M,S]): ODF[M,S] 
   def removePaths( removedPaths: Iterable[Path]) : ODF[M,S]  

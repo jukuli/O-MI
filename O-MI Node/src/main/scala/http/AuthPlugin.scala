@@ -25,9 +25,8 @@ import database._
 import http.Authorization.{UnauthorizedEx, AuthorizationExtension, CombinedTest}
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.server.Directives.extract
-import types.OdfTypes._
 import types.OmiTypes._
-import types.Path
+import types.odf._
 
 
 sealed trait AuthorizationResult{
@@ -56,8 +55,9 @@ trait AuthApi {
   def isAuthorizedForRequest(httpRequest: HttpRequest, omiRequest: OmiRequest): AuthorizationResult = {
     omiRequest match {
       case odfRequest: OdfRequest =>
+        val odf = OldTypeConverter.convertOdfObjects(odfRequest.odf )
 
-        val paths = getLeafs(odfRequest.odf) map (_.path) // todo: refactor getLeafs to member lazy to re-use later
+        val paths = odf.getLeafPaths // todo: refactor getLeafs to member lazy to re-use later
 
         odfRequest match {
           case r: PermissiveRequest =>  // Write or Response
@@ -133,24 +133,27 @@ trait AuthApiProvider extends AuthorizationExtension {
             paths <- Option(maybePaths) // paths might be null
 
             // Rebuild the request having only `paths`
-            pathTrees = paths collect {
+            nodes = paths collect {
               case path: Path =>              // filter nulls out
-                currentTree.get(path) match { // figure out is it InfoItem or Object
+                currentTree.get(path) 
+                /*
+                match { // figure out is it InfoItem or Object
                   case Some(nodeType) => createAncestors(nodeType)
                   case None => OdfObjects()
-                }
-            }
+                }*/
+            } flatten
 
-          } yield pathTrees.fold(OdfObjects())(_ union _)
+          } yield ImmutableODF( nodes )
 
           newOdfOpt match {
-            case Some(newOdf) if (newOdf.objects.nonEmpty) =>
+            case Some(newOdf) if (newOdf.getObjects.nonEmpty) =>
+              val oldTypeOdf = NewTypeConverter.convertODF( newOdf )
               orgOmiRequest.unwrapped flatMap {
-                case r: ReadRequest         => Success(r.copy(odf = newOdf))
-                case r: SubscriptionRequest => Success(r.copy(odf = newOdf))
-                case r: WriteRequest        => Success(r.copy(odf = newOdf))
+                case r: ReadRequest         => Success(r.copy(odf = oldTypeOdf))
+                case r: SubscriptionRequest => Success(r.copy(odf = oldTypeOdf))
+                case r: WriteRequest        => Success(r.copy(odf = oldTypeOdf))
                 case r: ResponseRequest     => Success(r.copy(results =
-                  OdfTreeCollection(r.results.head.copy(odf = Some(newOdf))) // TODO: make better copy logic?
+                  Vector(r.results.head.copy(odf = Some(oldTypeOdf))) // TODO: make better copy logic?
                 ))
                 case r: AnyRef => throw new NotImplementedError(
                   s"Partial authorization granted for ${maybePaths.mkString(", ")}, BUT request '${r.getClass.getSimpleName}' not yet implemented in O-MI node.")

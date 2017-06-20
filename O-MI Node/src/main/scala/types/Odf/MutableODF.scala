@@ -15,6 +15,8 @@ class MutableODF private[odf](
   type M = MutableHashMap[Path,Node]
   type S = MutableTreeSet[Path]
   protected[odf] val paths: MutableTreeSet[Path] = MutableTreeSet( nodes.keys.toSeq:_* )(PathOrdering)
+  def isEmpty:Boolean = paths.size == 1 && paths.contains(Path("Objects"))
+  def nonEmpty:Boolean = paths.size > 1 
   def update( that: GeneralODF ): MutableODF ={
     nodes.mapValues{
       case node: Node => 
@@ -27,6 +29,22 @@ class MutableODF private[odf](
         }
     }
    this
+  }
+  def cutOut( cutPaths: Set[Path] ): MutableODF ={
+  
+    //Remove intersecting paths.
+    //Generate ancestors for remaining paths, so that no parentless paths remains. 
+    //Remove duplicates
+    val newPaths = (paths -- cutPaths).flatMap{
+      case path: Path => path.getAncestorsAndSelf
+    }.toSet
+    val removedPaths = cutPaths -- newPaths
+    this.nodes --= removedPaths
+    this.paths --= removedPaths
+    this
+  }
+  def cutOut( that: MutableODF ): MutableODF ={
+    cutOut( that.paths.toSet )
   }
 
   def getTree( selectingPaths: Seq[Path] ) : ODF[M,S] ={
@@ -207,10 +225,10 @@ class MutableODF private[odf](
 
 object MutableODF{
   def apply(
-      _nodes: Seq[Node]  = Vector.empty
+      _nodes: Iterable[Node]  = Vector.empty
   ) : MutableODF ={
     val mutableHMap : MutableHashMap[Path,Node] = MutableHashMap.empty
-    val sorted = _nodes.sortBy( _.path)(PathOrdering)
+    val sorted = _nodes.toSeq.sortBy( _.path)(PathOrdering)
     sorted.foreach{
       case node: Node =>
         if( mutableHMap.contains( node.path ) ){

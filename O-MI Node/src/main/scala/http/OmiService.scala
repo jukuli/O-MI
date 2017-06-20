@@ -46,7 +46,8 @@ import responses.{CallbackHandler, RESTHandler, RESTRequest, RemoveSubscription,
 import responses.CallbackHandler._
 import types.OmiTypes._
 import types.OmiTypes.Callback._
-import types.{ParseError, Path}
+import types.{ParseError}
+import types.odf._
 import database.{GetTree, SingleStores}
 
 import scala.compat.java8.OptionConverters._
@@ -176,7 +177,16 @@ trait OmiService
               case path => path
             }
 
-            val asReadRequest = (singleStores.hierarchyStore execute GetTree()).get(path).map(_.createAncestors).map( p => ReadRequest(p,user0 = UserInfo(remoteAddress = Some(user))))
+            val cachedODF = singleStores.hierarchyStore execute GetTree()
+            val asReadRequest = cachedODF.get(path).map{ 
+              node: Node => 
+                node.createAncestors 
+            }.map{
+              nodes: Seq[Node] => 
+                val odf = ImmutableODF( nodes)
+                val objs = NewTypeConverter.convertODF( odf )
+                ReadRequest(objs,user0 = UserInfo(remoteAddress = Some(user)))
+            }
               asReadRequest match {
                 case Some(readReq) =>
                   hasPermissionTest(readReq) match {
