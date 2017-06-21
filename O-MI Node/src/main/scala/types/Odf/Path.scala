@@ -32,8 +32,10 @@ case class Path(
     pathStr.split("/").toVector
   }
 
-  def getAncestorsAndSelf: Seq[Path] = path.inits.map( Path(_) ).toVector ++ Vector(this)
-  def getAncestors: Seq[Path] = path.inits.map( Path(_) ).toVector
+  def nonEmpty: Boolean = path.nonEmpty
+  def isEmpty: Boolean = path.isEmpty
+  def getAncestorsAndSelf: Seq[Path] = path.inits.map( Path(_) ).filter( _.nonEmpty ).toVector ++ Vector(this)
+  def getAncestors: Seq[Path] = path.inits.map( Path(_) ).filter( _.nonEmpty ).toVector
   def getParent: Path = Path(path.init)
   def length: Int = path.length
   override def toString: String = path.mkString("/")

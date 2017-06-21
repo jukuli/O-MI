@@ -123,16 +123,20 @@ case class InfoItem(
     )
   }
   def createAncestors: Seq[Node] = {
-        path.getAncestors.map{
-          case ancestorPath: Path => 
-            new Object(
-              Vector(
-                new QlmID(
-                  ancestorPath.last
-                )
-              ),
+        path.getAncestors.collect{
+          case ancestorPath: Path if ancestorPath.nonEmpty => 
+            if( ancestorPath == Path("Objects")){
+              Objects()
+            } else {
+              new Object(
+                Vector(
+                  new QlmID(
+                    ancestorPath.last
+                  )
+                ),
               ancestorPath
             )
+            }
         }.toVector
   }
   def createParent: Node = {

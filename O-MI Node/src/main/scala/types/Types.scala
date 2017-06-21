@@ -20,7 +20,7 @@ package types
 import scala.collection.JavaConversions
 import scala.concurrent.{Future, ExecutionContext}
 import scala.util.{Failure, Success, Try}
-import OmiTypes.ResponseRequest
+import omi.ResponseRequest
 
 object JavaHelpers{
 

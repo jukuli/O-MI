@@ -19,11 +19,11 @@ import scala.concurrent.duration.Duration;
 import scala.concurrent.Future;
 import scala.concurrent.ExecutionContext;
 
-import types.OmiTypes.WriteRequest;
-import types.OmiTypes.ReadRequest;
-import types.OmiTypes.CallRequest;
-import types.OmiTypes.ResponseRequest;
-import types.OmiTypes.Responses;
+import types.omi.WriteRequest;
+import types.omi.ReadRequest;
+import types.omi.CallRequest;
+import types.omi.ResponseRequest;
+import types.omi.Responses;
 import types.OdfTypes.OdfTreeCollection;
 
 public abstract class ResponsibleJavaInternalAgent extends JavaInternalAgent implements ResponsibleInternalAgent {

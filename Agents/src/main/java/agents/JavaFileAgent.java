@@ -35,13 +35,13 @@ import parsing.OdfParser;
 import agentSystem.JavaInternalAgent; 
 import agentSystem.*;
 import types.*;
-import types.OmiTypes.*;
 import types.OdfTypes.OdfValue;
 import types.OdfTypes.*;
 import types.OdfFactory;
-import types.OmiFactory;
-import types.OmiTypes.Results;
-import types.OmiTypes.OmiResult;
+import types.omi.OmiFactory;
+import types.omi.*;
+import types.odf.Path;
+import types.odf.OldTypeConverter;
 import types.OdfTypes.OdfInfoItem;
 
 /**
@@ -292,7 +292,7 @@ public class JavaFileAgent extends JavaInternalAgent {
     // interval as time to live
     WriteRequest write = OmiFactory.createWriteRequest(
         interval, // ttl
-        odf   // O-DF
+        OldTypeConverter.convertOdfObjects( odf )   // O-DF
     );
     
     // Execute the request, execution is asynchronous (will not block)

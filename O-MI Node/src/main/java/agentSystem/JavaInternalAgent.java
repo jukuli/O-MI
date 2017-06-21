@@ -13,12 +13,12 @@ import akka.util.Timeout;
 
 import static akka.pattern.Patterns.ask;
 import agentSystem.InternalAgent;
-import types.OmiTypes.OmiRequest;
-import types.OmiTypes.OdfRequest;
-import types.OmiTypes.WriteRequest;
-import types.OmiTypes.ReadRequest;
-import types.OmiTypes.ActorSenderInformation;
-import types.OmiTypes.ResponseRequest;
+import types.omi.OmiRequest;
+import types.omi.OdfRequest;
+import types.omi.WriteRequest;
+import types.omi.ReadRequest;
+import types.omi.ActorSenderInformation;
+import types.omi.ResponseRequest;
 
 public abstract class JavaInternalAgent extends UntypedActor implements InternalAgent{
   /**

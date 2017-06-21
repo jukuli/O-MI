@@ -25,14 +25,13 @@ import com.typesafe.config.Config;
 
 import agentSystem.JavaInternalAgent; 
 import agentSystem.*;
-import types.Path;
-import types.OmiTypes.*;
+import types.odf.Path;
+import types.odf.OldTypeConverter;
+import types.omi.*;
 import types.OdfTypes.OdfValue;
 import types.OdfTypes.*;
-import types.OmiTypes.OmiResult;
-import types.OmiTypes.Results;
 import types.OdfFactory;
-import types.OmiFactory;
+import types.omi.OmiFactory;
 import types.OdfTypes.OdfInfoItem;
 
 /**
@@ -165,7 +164,7 @@ public class JavaAgent extends JavaInternalAgent {
     // interval as time to live
     WriteRequest write = OmiFactory.createWriteRequest(
         interval, // ttl
-        objects   // O-DF
+        OldTypeConverter.convertOdfObjects( objects )  // O-DF
     );
     
 

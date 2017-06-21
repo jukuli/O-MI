@@ -27,13 +27,12 @@ import com.typesafe.config.Config;
 
 import agentSystem.JavaInternalAgent; 
 import agentSystem.*;
-import types.Path;
-import types.OmiTypes.*;
+import types.odf.Path;
 import types.OdfTypes.OdfValue;
 import types.OdfTypes.*;
 import types.OdfFactory;
 import types.OmiFactory;
-import types.OmiTypes.OmiResult;
+import types.omi.*;
 import types.OdfTypes.OdfInfoItem;
 
 /**

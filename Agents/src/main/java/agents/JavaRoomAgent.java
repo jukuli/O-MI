@@ -32,14 +32,14 @@ import com.typesafe.config.Config;
 import agentSystem.JavaInternalAgent; 
 import akka.actor.ActorRef;
 import agentSystem.*;
-import types.Path;
-import types.OmiTypes.*;
+import types.omi.*;
+import types.odf.OldTypeConverter;
 import types.OdfTypes.*;
 import types.OdfFactory;
-import types.OmiTypes.OmiResult;
-import types.OmiTypes.Results;
-import types.OmiFactory;
-import types.*;
+import types.omi.OmiFactory;
+
+import types.JavaHelpers;
+import types.odf.Path;
 
 /**
  * Writes random generated numbers to a O-DF structure defined in createOdf() method.
@@ -472,7 +472,7 @@ public class JavaRoomAgent extends JavaInternalAgent {
     // interval as time to live
     WriteRequest write = OmiFactory.createWriteRequest(
         interval, // ttl
-        odf   // O-DF
+        OldTypeConverter.convertOdfObjects(odf)   // O-DF
     );
     
     // Execute the request, execution is asynchronous (will not block)
