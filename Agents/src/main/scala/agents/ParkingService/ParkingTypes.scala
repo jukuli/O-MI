@@ -11,7 +11,7 @@ case class Reservation( path: Path, user: String, openLid: Boolean = false )exte
     val lidStatus = if( openLid ){
       Vector(
       OdfObject(
-        Vector( QlmID( "Charger" )),
+        Vector( OdfQlmID( "Charger" )),
         path / "Charger",
         infoItems = Vector(
           OdfInfoItem(
@@ -22,7 +22,7 @@ case class Reservation( path: Path, user: String, openLid: Boolean = false )exte
       ))
     } else Vector()
     OdfObject(
-      Vector( QlmID( path.last )),
+      Vector( OdfQlmID( path.last )),
       path,
       objects = lidStatus,
       infoItems = Vector(
@@ -44,7 +44,7 @@ case class FreeReservation( path: Path, user: String, openLid: Boolean = false )
     val lidStatus = if( openLid ){
       Vector(
       OdfObject(
-        Vector( QlmID( "Charger" )),
+        Vector( OdfQlmID( "Charger" )),
         path / "Charger",
         infoItems = Vector(
           OdfInfoItem(
@@ -55,7 +55,7 @@ case class FreeReservation( path: Path, user: String, openLid: Boolean = false )
       ))
     } else Vector()
     OdfObject(
-      Vector( QlmID( path.last )),
+      Vector( OdfQlmID( path.last )),
       path,
       objects = lidStatus,
       infoItems = Vector(
@@ -76,11 +76,11 @@ case class OpenLid( path: Path, user: String ) extends ParkingEvent{
   def lidStatusPath = path / "Charger" / "LidStatus"
   def toOdf: OdfObject ={
     OdfObject(
-      Vector( QlmID( path.last )),
+      Vector( OdfQlmID( path.last )),
       path,
       objects = Vector(
         OdfObject(
-          Vector( QlmID( "Charger" )),
+          Vector( OdfQlmID( "Charger" )),
           path / "Charger",
           infoItems = Vector(
             OdfInfoItem(
@@ -116,7 +116,7 @@ case class ParkingSpot(
       ) 
     }.toVector
     OdfObject( 
-      Vector( QlmID( name ) ),
+      Vector( OdfQlmID( name ) ),
       spotPath,
       availableII ++ userII,
       charger.map{ ch => ch.toOdf( spotPath ) }.toVector,
@@ -205,7 +205,7 @@ case class Charger(
         )
     }
     OdfObject(
-      Vector( QlmID( "Charger" )),
+      Vector( OdfQlmID( "Charger" )),
       chargerPath,
       brandII ++ modelII,
       plug.map( _.toOdf( chargerPath ) ).toVector ,
@@ -308,7 +308,7 @@ case class PowerPlug(
     }.toVector
 
     OdfObject(
-      Vector( QlmID("Plug")),
+      Vector( OdfQlmID("Plug")),
       plugPath,
       pTII ++ 
       powerII ++ 
@@ -330,7 +330,7 @@ case class Dimensions(
   def toOdf( parentPath: Path, objectName: String = "Dimensions") = {
     val dimensionsPath = parentPath / objectName
     OdfObject( 
-      Vector( QlmID( "Dimensions" ) ),
+      Vector( OdfQlmID( "Dimensions" ) ),
       dimensionsPath,
       Vector( 
         OdfInfoItem( 
@@ -365,7 +365,7 @@ case class ParkingSpotType(
     val id = { if(spotType.startsWith("mv:") ) spotType.drop(3) else spotType }
     val pstPath = parentPath / id
     OdfObject(
-      Vector( QlmID( id) ),
+      Vector( OdfQlmID( id) ),
       pstPath,
       Vector(),
       spots.map( _.toOdf(pstPath) ).toVector,
@@ -385,7 +385,7 @@ case class ParkingFacility(
   def toOdf( parentPath: Path ) = {
     val facilityPath = parentPath / name
     OdfObject(
-      Vector( QlmID( name ) ),
+      Vector( OdfQlmID( name ) ),
       facilityPath,
       Vector(
         OdfInfoItem(
@@ -412,7 +412,7 @@ case class OpeningHoursSpecification(
   def toOdf( parentPath: Path ) ={
     val ohsPath = parentPath / "openingHoursSpecification"
     OdfObject( 
-      Vector( QlmID( "openingHoursSpecification"  ) ),
+      Vector( OdfQlmID( "openingHoursSpecification"  ) ),
       ohsPath,
       Vector(
         OdfInfoItem(
@@ -460,7 +460,7 @@ case class PostalAddress(
     )
 
     OdfObject(
-      Vector( QlmID( "address" ) ),
+      Vector( OdfQlmID( "address" ) ),
       addressPath,
       Vector(countryII, localityII, regionII, streetII, postCodeII ),
       Vector(),
@@ -478,7 +478,7 @@ case class GPSCoordinates(
   def toOdf( parentPath: Path, objectName: String ) ={
     val geoPath = parentPath / objectName
     OdfObject(
-      Vector( QlmID( objectName ) ),
+      Vector( OdfQlmID( objectName ) ),
       geoPath,
       Vector( 
         OdfInfoItem( 

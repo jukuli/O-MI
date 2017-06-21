@@ -1,26 +1,27 @@
 package agents
 
-import agentSystem._ 
 import akka.util.Timeout
 import akka.pattern.ask
 import akka.actor.{Cancellable, Props, ActorRef}
-import parsing.OdfParser
-import types.{Path, ParseError, ParseErrorList}
-import types.Path._
-import types.OdfTypes._
-import types.OmiTypes.{WriteRequest, ResponseRequest, OmiResult, Results}
 import scala.concurrent.Promise
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.collection.JavaConversions.{iterableAsScalaIterable, asJavaIterable}
 import scala.collection.mutable.{Queue => MutableQueue}
-import scala.xml._
 import scala.util.{Random, Try, Success, Failure}
+import scala.xml.XML
 import java.util.concurrent.TimeUnit
 import java.util.Date
 import java.sql.Timestamp;
 import java.io.File
 import com.typesafe.config.Config
+import agentSystem._ 
+import parsing.OdfParser
+import types.{ ParseError, ParseErrorList}
+import types.odf.Path._
+import types.omi.{WriteRequest, ResponseRequest, OmiResult, Results}
+import types.odf.{ Path, OldTypeConverter, NewTypeConverter}
+import types.OdfTypes._
 
 object ODFAgent extends PropsCreator{
   def props( config: Config, requestHandler: ActorRef, dbHandler: ActorRef ): Props = {
@@ -104,7 +105,7 @@ class ODFAgent(
       val allNodes = updated ++ objectsWithMetaData
       val newObjects = allNodes.map(createAncestors(_)).foldLeft(OdfObjects())(_.union(_))
       
-      val write = WriteRequest( newObjects, None, interval)
+      val write = WriteRequest( OldTypeConverter.convertOdfObjects( newObjects) , None, interval)
       val result = writeToDB( write)
       result.onComplete{
         case Success( response: ResponseRequest )=>

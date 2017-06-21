@@ -20,11 +20,11 @@ import akka.pattern.ask
 
 import agentSystem._ 
 import parsing.OdfParser
-import types.OmiTypes._
+import types.omi._
 import types.OdfTypes._
 import types._
-import types.Path._
-import types.Path
+import types.odf.Path._
+import types.odf.{ Path, OldTypeConverter, NewTypeConverter}
 import parsing.OdfParser
 import scala.xml.XML
 
@@ -78,7 +78,7 @@ class ParkingAgent(
     throw  AgentConfigurationException(s"Could not get initial state for $name. Could not read file $startStateFile.")
   }
 
-  val initialWrite = writeToDB( WriteRequest(initialODF) )
+  val initialWrite = writeToDB( WriteRequest( OldTypeConverter.convertOdfObjects( initialODF ) ) )
   val initialisationWriteTO = 10.seconds
   val initializationResponse = Await.ready(initialWrite, initialisationWriteTO)
   initializationResponse.value match{
@@ -86,7 +86,7 @@ class ParkingAgent(
       throw new Exception(s"Could not set initial state for $name. Initial write to DB timedout after $initialisationWriteTO.")
     case Some( Failure( e )) => 
       throw new Exception(s"Could not set initial state for $name. Initial write to DB failed.", e)
-    case Some( Success( response )) => 
+    case Some( Success( response: ResponseRequest )) => 
       response.results.foreach{
         case result: OmiResult =>
           result.returnValue match {
@@ -232,11 +232,13 @@ class ParkingAgent(
   def findParking( params: ParkingParameters ):Future[ResponseRequest]={
     log.debug("FindParking called")
     val request = ReadRequest(
+      OldTypeConverter.convertOdfObjects(
         OdfObject(
-          Vector(QlmID(parkingLotsPath.last)),
+          Vector(OdfQlmID(parkingLotsPath.last)),
           parkingLotsPath
-       ).createAncestors
+        ).createAncestors
       )
+    )
     //log.debug( "Request:\n " + request.toString)
     val results = readFromDB(
       request
@@ -260,9 +262,10 @@ class ParkingAgent(
                                 handleParkingLotForCall(o,params)
                             }
                         log.debug( s"Found ${modifiedParkingLots.size} parking lots near the destination" )
+                        OldTypeConverter.convertOdfObjects(
                         obj.copy(
                           objects = modifiedParkingLots 
-                        ).createAncestors
+                        ).createAncestors )
                     } 
                   )
                 case None => result
@@ -306,8 +309,10 @@ class ParkingAgent(
   
 
   override protected def handleWrite(write: WriteRequest) : Future[ResponseRequest] = {
-    val parkingSpaces =  write.odf.getNodesOfType( "mv:ParkingSpace" )
-    if(write.odf.get(findParkingPath).nonEmpty ){
+    val odf = NewTypeConverter.convertODF( write.odf )
+    val parkingSpaces =   odf.getNodesOfType( "mv:ParkingSpace" )
+
+    if(odf.get(findParkingPath).nonEmpty ){
         Future{
           Responses.InvalidRequest(
             Some("Trying to write to path containing a service method.")
@@ -397,7 +402,7 @@ class ParkingAgent(
         log.debug(s"Got ${events.length} events")
         val results = events.map{
           case reservation : Reservation=>
-            val write = WriteRequest(reservation.toOdf.createAncestors)
+            val write = WriteRequest( OldTypeConverter.convertOdfObjects( reservation.toOdf.createAncestors ) )
             log.debug(write.asXML.toString ) 
             val result = writeToDB( write )
             result.onSuccess{
@@ -422,7 +427,7 @@ class ParkingAgent(
             }
             result
           case freeing : FreeReservation=>
-            val write = WriteRequest(freeing.toOdf.createAncestors)
+            val write = WriteRequest( OldTypeConverter.convertOdfObjects( freeing.toOdf.createAncestors ) )
             log.debug(write.asXML.toString ) 
             val result = writeToDB( write )
             result.onSuccess{
@@ -447,7 +452,7 @@ class ParkingAgent(
             }
             result
           case openLid : OpenLid =>
-            val write = WriteRequest(openLid.toOdf.createAncestors)
+            val write = WriteRequest( OldTypeConverter.convertOdfObjects( openLid.toOdf.createAncestors ))
             log.debug(write.asXML.toString ) 
             val result = writeToDB( write )
             result.onSuccess{
@@ -561,10 +566,10 @@ class ParkingAgent(
     context.system.scheduler.scheduleOnce( delay, self, CloseLid( pathToLidState) )
   }
   def closeLid( pathToLidState: Path ) ={
-   val write = WriteRequest( OdfInfoItem(
+   val write = WriteRequest(  OldTypeConverter.convertOdfObjects( OdfInfoItem(
      pathToLidState,
      values = Vector( OdfValue( "Locked", currentTime ))
-   ).createAncestors)
+   ).createAncestors ) )
      
    writeToDB( write)
     

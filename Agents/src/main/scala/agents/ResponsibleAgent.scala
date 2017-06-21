@@ -9,7 +9,8 @@ import akka.pattern.ask
 
 import agentSystem._ 
 import com.typesafe.config.Config
-import types.OmiTypes._
+import types.omi._
+import types.odf.{ Path, OldTypeConverter}
 
 /**
  * Companion object for ResponsibleScalaAgent. Extends PropsCreator to enforce recommended practice in Props creation.
