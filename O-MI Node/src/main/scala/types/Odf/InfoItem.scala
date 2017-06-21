@@ -18,7 +18,7 @@ object InfoItem{
   def apply(
     path: Path,
     typeAttribute: Option[String],
-    name: Vector[QlmID],
+    names: Vector[QlmID],
     descriptions: Vector[Description],
     values: Vector[Value[Any]],
     metaData: Option[MetaData],
@@ -28,7 +28,7 @@ object InfoItem{
       path.last,
       path,
       typeAttribute,
-      name,
+      names,
       descriptions,
       values,
       metaData,
@@ -41,7 +41,7 @@ case class InfoItem(
   val nameAttribute: String,
   val path: Path,
   val typeAttribute: Option[String] = None,
-  val name: Vector[QlmID] = Vector.empty,
+  val names: Vector[QlmID] = Vector.empty,
   val descriptions: Vector[Description]= Vector.empty,
   val values: Vector[Value[Any]]= Vector.empty,
   val metaData: Option[MetaData] = None,
@@ -56,7 +56,7 @@ case class InfoItem(
       nameAttribute,
       path,
       that.typeAttribute.orElse( typeAttribute ),
-      QlmID.unionReduce( that.name ++ name).toVector.filter{ case id => id.id.nonEmpty},
+      QlmID.unionReduce( that.names ++ names).toVector.filter{ case id => id.id.nonEmpty},
       Description.unionReduce(that.descriptions ++ descriptions).toVector.filter{ case desc => desc.text.nonEmpty},
       if( that.values.nonEmpty ) that.values else values,
       that.metaData.flatMap{
@@ -83,8 +83,8 @@ case class InfoItem(
       nameAttribute,
       path,
       that.typeAttribute.orElse( typeAttribute),
-      if( that.name.nonEmpty ){
-        QlmID.unionReduce( that.name ++ name).toVector.filter{ case id => id.id.nonEmpty}
+      if( that.names.nonEmpty ){
+        QlmID.unionReduce( that.names ++ names).toVector.filter{ case id => id.id.nonEmpty}
       } else Vector.empty,
       if( that.descriptions.nonEmpty ){
         Description.unionReduce(that.descriptions ++ descriptions).toVector.filter{ case desc => desc.text.nonEmpty}
@@ -112,7 +112,7 @@ case class InfoItem(
       nameAttribute,
       path,
       typeAttribute,
-      QlmID.unionReduce(name ++ that.name).toVector,
+      QlmID.unionReduce(names ++ that.names).toVector,
       Description.unionReduce(descriptions ++ that.descriptions).toVector,
       values ++ that.values,
       (metaData, that.metaData) match{
@@ -122,7 +122,7 @@ case class InfoItem(
       attributes ++ that.attributes
     )
   }
-  def createAncestos: Seq[Node] = {
+  def createAncestors: Seq[Node] = {
         path.getAncestors.map{
           case ancestorPath: Path => 
             new Object(
@@ -153,7 +153,7 @@ case class InfoItem(
 
   def asInfoItemType: InfoItemType = {
     InfoItemType(
-      this.name.map{
+      this.names.map{
         qlmid => qlmid.asQlmIDType
       },
       this.descriptions.map{ 
@@ -166,7 +166,7 @@ case class InfoItem(
         value : Value[Any] => value.asValueType
       }.toSeq,
       HashMap(
-        "@name" -> DataRecord(
+        "@names" -> DataRecord(
           nameAttribute
         ),
         "@type" -> DataRecord(
@@ -179,7 +179,7 @@ case class InfoItem(
   def hasStaticData: Boolean ={
     attributes.nonEmpty ||
     metaData.nonEmpty ||
-    name.nonEmpty ||
+    names.nonEmpty ||
     typeAttribute.nonEmpty ||
     descriptions.nonEmpty 
   }

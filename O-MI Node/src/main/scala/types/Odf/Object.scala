@@ -8,21 +8,21 @@ import parsing.xmlGen.scalaxb.DataRecord
 import parsing.xmlGen.xmlTypes.{InfoItemType, ObjectType}
 
 case class Object(
-  val id: Vector[QlmID],
+  val ids: Vector[QlmID],
   val path: Path,
   val typeAttribute: Option[String] = None,
   val descriptions: Seq[Description] = Vector.empty,
   val attributes: IMap[String,String] = HashMap.empty
 ) extends Node with Unionable[Object] {
-  assert( id.nonEmpty )
+  assert( ids.nonEmpty )
   assert( path.length >= 2 )
-  assert( id.map(_.id).toSet.contains(path.last) )
+  assert( ids.map(_.id).toSet.contains(path.last) )
   def update( that: Object ): Object ={
     val pathsMatches = path == that.path 
-    val containSameId = id.map( _.id ).toSet.intersect( that.id.map( _.id).toSet ).nonEmpty
+    val containSameId = ids.map( _.id ).toSet.intersect( that.ids.map( _.id).toSet ).nonEmpty
     assert( containSameId && pathsMatches)
     new Object(
-      QlmID.unionReduce( id ++ that.id).toVector,
+      QlmID.unionReduce( ids ++ that.ids).toVector,
       path,
       that.typeAttribute.orElse(typeAttribute),
       Description.unionReduce(descriptions ++ that.descriptions).toVector,
@@ -33,17 +33,17 @@ case class Object(
 
   def hasStaticData: Boolean ={
     attributes.nonEmpty ||
-    id.length > 1 ||
+    ids.length > 1 ||
     typeAttribute.nonEmpty ||
     descriptions.nonEmpty 
   }
   def intersection( that: Object ): Object ={
     val pathsMatches = path == that.path 
-    val containSameId = id.map( _.id ).toSet.intersect( that.id.map( _.id).toSet ).nonEmpty
+    val containSameId = ids.map( _.id ).toSet.intersect( that.ids.map( _.id).toSet ).nonEmpty
     assert( containSameId && pathsMatches)
     new Object(
-      if( that.id.nonEmpty ){
-        QlmID.unionReduce( that.id ++ id).toVector.filter{ case id => id.id.nonEmpty}
+      if( that.ids.nonEmpty ){
+        QlmID.unionReduce( that.ids ++ ids).toVector.filter{ case id => id.id.nonEmpty}
       } else Vector.empty,
       path,
       that.typeAttribute.orElse(typeAttribute),
@@ -56,10 +56,10 @@ case class Object(
   }
   def union( that: Object ): Object ={
     val pathsMatches = path == that.path 
-    val containSameId = id.map( _.id ).toSet.intersect( that.id.map( _.id).toSet ).nonEmpty
+    val containSameId = ids.map( _.id ).toSet.intersect( that.ids.map( _.id).toSet ).nonEmpty
     assert( containSameId && pathsMatches)
     new Object(
-      QlmID.unionReduce(id ++ that.id).toVector,
+      QlmID.unionReduce(ids ++ that.ids).toVector,
       path,
       (typeAttribute, that.typeAttribute) match {
         case (Some( t ), Some( ot ) ) =>
@@ -107,7 +107,7 @@ case class Object(
         path.last, // require checks (also in OdfObject)
         attributes = Map.empty
       )),*/
-      id.map(_.asQlmIDType), //
+      ids.map(_.asQlmIDType), //
       descriptions.map( des => des.asDescriptionType ).toSeq,
       infoitems,
       objects,

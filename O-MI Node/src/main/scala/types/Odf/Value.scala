@@ -37,10 +37,10 @@ trait Value[+V]{
 }
 
 case class ODFValue(
-  val value: ImmutableODF,
+  val value: ODF,
   val timestamp: Timestamp,
   val attributes: Map[String,String]
-) extends Value[ImmutableODF] {
+) extends Value[ODF] {
   final val typeAttribute: String = "odf:Objects"
   def valueAsDataRecord = DataRecord(None, Some("Objects"),value.asObjectsType)
 }
@@ -124,7 +124,7 @@ object Value{
     attributes: Map[String, String]
   ) : Value[Any] = {
     value match {
-      case odf: ODF[scala.collection.Map[Path,Node],scala.collection.SortedSet[Path]] => 
+      case odf: ODF => //[scala.collection.Map[Path,Node],scala.collection.SortedSet[Path]] => 
         ODFValue(odf.immutable, timestamp, attributes)
       case s: Short => ShortValue(s, timestamp, attributes)
       case i: Int   => IntValue(i, timestamp, attributes)
@@ -148,7 +148,7 @@ object Value{
     attributes: Map[String, String] = HashMap.empty
   ) : Value[Any] = {
     value match {
-      case odf: ODF[scala.collection.Map[Path,Node],scala.collection.SortedSet[Path]] => 
+      case odf: ODF => //[scala.collection.Map[Path,Node],scala.collection.SortedSet[Path]] => 
         ODFValue(odf.immutable, timestamp, attributes)
       case s: Short => ShortValue(s, timestamp, attributes)
       case i: Int   => IntValue(i, timestamp, attributes)

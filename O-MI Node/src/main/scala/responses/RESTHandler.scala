@@ -117,7 +117,7 @@ object RESTHandler{
               case ii: InfoItem => true
               case o: Object => false
             }
-            val iiTypes = iis.collect{ case ii: InfoItem => ii.copy( descriptions = Vector(), metaData = None, values = Vector(), name = Vector()).asInfoItemType }
+            val iiTypes = iis.collect{ case ii: InfoItem => ii.copy( descriptions = Vector(), metaData = None, values = Vector(), names = Vector()).asInfoItemType }
             val objTypes = objs.collect{ case o: Object => o.copy( descriptions = Vector()).asObjectType(Vector(),Vector()) }
 
             scalaxb.toXML[xmlTypes.ObjectType](

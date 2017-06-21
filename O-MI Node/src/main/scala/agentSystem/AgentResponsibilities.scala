@@ -51,7 +51,7 @@ class AgentResponsibilities(){
       (agentToResponsibilities.map{
         case ( agent, odf ) => 
           Some(agent) -> odf.immutable
-      }.toVector ++ Vector(Option.empty[String] -> odf.cutOut(pathsInResponsibilities))):_*
+      }.toVector ++ Vector(Option.empty[String] -> odf.cutOut(pathsInResponsibilities).immutable)):_*
     )
     agentOptionToODF.mapValues{
       case odf => 

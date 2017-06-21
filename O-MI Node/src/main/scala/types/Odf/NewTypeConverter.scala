@@ -6,7 +6,7 @@ import types.OdfTypes._
 
 object NewTypeConverter{
   def convertODF[M <: scala.collection.Map[Path,Node], S <: scala.collection.SortedSet[Path]](
-    o_df: ODF[M,S] 
+    o_df: ODF
   ) : OdfObjects ={
     val firstLevelObjects= o_df.getChilds( new Path("Objects") )
     val odfObjects= firstLevelObjects.map{
@@ -22,7 +22,7 @@ object NewTypeConverter{
   }
 
   def createOdfObject[M <: scala.collection.Map[Path,Node], S <: scala.collection.SortedSet[Path]]
-  ( obj: Object, o_df: ODF[M,S] ): OdfObject ={
+  ( obj: Object, o_df: ODF ): OdfObject ={
     val (objects, infoItems ) = o_df.getChilds( obj.path ).partition{
       case obj: Object => true
       case ii: InfoItem => false
@@ -51,7 +51,7 @@ object NewTypeConverter{
     infoItems: Seq[OdfInfoItem] = Vector.empty,
     objects: Seq[OdfObject] = Vector.empty
   ) : OdfObject = {
-    var ids = obj.id.map( convertQlmID(_)).toVector 
+    var ids = obj.ids.map( convertQlmID(_)).toVector 
     if( !ids.map(_.value).contains(obj.path.last ) ){
       ids = ids ++ Vector( OdfQlmID(obj.path.last) )
     }
@@ -88,7 +88,7 @@ object NewTypeConverter{
   }
   def convertValue( value: Value[Any] ): OdfValue[Any] = {
     value.value match {
-      case o: ODF[scala.collection.Map[Path,Node],scala.collection.SortedSet[Path] ] =>
+      case o: ODF => //[scala.collection.Map[Path,Node],scala.collection.SortedSet[Path] ] =>
         OdfValue( convertODF(o), value.timestamp, HashMap( value.attributes.toSeq:_*) )
       case o: Any =>
         OdfValue(o, value.timestamp, HashMap( value.attributes.toSeq:_*) )

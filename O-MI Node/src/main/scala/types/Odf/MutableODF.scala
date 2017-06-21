@@ -10,14 +10,13 @@ import parsing.xmlGen.{odfDefaultScope, scalaxb, defaultScope}
 
 class MutableODF private[odf](
   protected[odf] val nodes: MutableHashMap[Path,Node] = MutableHashMap.empty
-) extends ODF[MutableHashMap[Path,Node],MutableTreeSet[Path]] {
-  type GeneralODF = ODF[scala.collection.Map[Path,Node], scala.collection.SortedSet[Path] ]
+) extends ODF{//[MutableHashMap[Path,Node],MutableTreeSet[Path]] {
   type M = MutableHashMap[Path,Node]
   type S = MutableTreeSet[Path]
   protected[odf] val paths: MutableTreeSet[Path] = MutableTreeSet( nodes.keys.toSeq:_* )(PathOrdering)
   def isEmpty:Boolean = paths.size == 1 && paths.contains(Path("Objects"))
   def nonEmpty:Boolean = paths.size > 1 
-  def update( that: GeneralODF ): MutableODF ={
+  def update[TM <: Map[Path,Node], TS <: SortedSet[Path]]( that: ODF ): ODF ={
     nodes.mapValues{
       case node: Node => 
         (node,that.get(node.path)) match {
@@ -30,7 +29,7 @@ class MutableODF private[odf](
     }
    this
   }
-  def cutOut( cutPaths: Set[Path] ): MutableODF ={
+  def cutOut( cutPaths: Set[Path] ): ODF ={
   
     //Remove intersecting paths.
     //Generate ancestors for remaining paths, so that no parentless paths remains. 
@@ -43,11 +42,11 @@ class MutableODF private[odf](
     this.paths --= removedPaths
     this
   }
-  def cutOut( that: MutableODF ): MutableODF ={
+  def cutOut[TM <: Map[Path,Node], TS <: SortedSet[Path]]( that: ODF ): ODF ={
     cutOut( that.paths.toSet )
   }
 
-  def getTree( selectingPaths: Seq[Path] ) : ODF[M,S] ={
+  def getTree( selectingPaths: Seq[Path] ) : ODF ={
     val ancestorsPaths = selectingPaths.flatMap{ p => p.getAncestors }.toSet
     val subTreePaths = getSubTreePaths( selectingPaths ).toSet
     val nodesSelected = (subTreePaths ++ ancestorsPaths).flatMap{
@@ -55,7 +54,7 @@ class MutableODF private[odf](
     }
     MutableODF( nodesSelected.toSeq )
   }
-  def union( that: ODF[M,S]): ODF[M,S] = {
+  def union[TM <: Map[Path,Node], TS <: SortedSet[Path]]( that: ODF ): ODF = {
     val pathIntersection: SortedSet[Path] = this.paths.intersect( that.paths)
     val thatOnlyNodes: Set[Node] = (that.paths -- pathIntersection ).flatMap{
       case p: Path =>
@@ -85,7 +84,7 @@ class MutableODF private[odf](
     this.nodes ++= allNodes.map{ node => node.path -> node }
     this
   }
-  def removePaths( removedPaths: Iterable[Path]) : ODF[M,S] = {
+  def removePaths( removedPaths: Iterable[Path]) : ODF = {
     val subtrees = removedPaths.flatMap( getSubTreePaths( _ ) )
     this.nodes --=( subtrees )
     this.paths --=( subtrees )
@@ -99,7 +98,7 @@ class MutableODF private[odf](
       this.nodes.values.toVector
   )
 
-  def valuesRemoved : ODF[M,S] ={
+  def valuesRemoved : ODF ={
     this.nodes.mapValues{
       case ii: InfoItem => ii.copy( values = Vector() )
       case obj: Object => obj 
@@ -107,7 +106,7 @@ class MutableODF private[odf](
     }
     this
   }
-  def descriptionsRemoved: ODF[M,S] = {
+  def descriptionsRemoved: ODF = {
     this.nodes.mapValues{
       case ii: InfoItem => ii.copy( descriptions = Vector() )
       case obj: Object => obj.copy( descriptions = Vector() )
@@ -115,7 +114,7 @@ class MutableODF private[odf](
     }
     this
   }
-  def metaDatasRemoved: ODF[M,S] ={
+  def metaDatasRemoved: ODF ={
     this.nodes.mapValues{
       case ii: InfoItem => ii.copy( metaData = None )
       case obj: Object => obj
@@ -123,7 +122,7 @@ class MutableODF private[odf](
     }
   this
   }
-  def attributesRemoved: ODF[M,S]={
+  def attributesRemoved: ODF={
     this.nodes.mapValues{
       case ii: InfoItem => ii.copy( typeAttribute = None, attributes = ImmutableHashMap() )
       case obj: Object => obj.copy( typeAttribute = None, attributes = ImmutableHashMap() )
@@ -132,7 +131,7 @@ class MutableODF private[odf](
   this
   }
   
-  def removePath( path: Path) : ODF[M,S] ={
+  def removePath( path: Path) : ODF ={
     val subtreeP = getSubTreePaths( path )
     this.nodes --=( subtreeP )
     this.paths --=( subtreeP )
@@ -140,7 +139,7 @@ class MutableODF private[odf](
   }
 
 
-  def add( node: Node) : ODF[M,S] ={
+  def add( node: Node) : ODF ={
     if( !nodes.contains( node.path ) ){
       nodes( node.path) = node
       paths += node.path
@@ -164,14 +163,14 @@ class MutableODF private[odf](
     this
   }
   
-  def addNodes( nodesToAdd: Seq[Node] ) : ODF[M,S] ={
+  def addNodes( nodesToAdd: Seq[Node] ) : ODF ={
     nodesToAdd.foreach{
       case node: Node =>
         this.add( node )
     }
     this
   }
-  def getSubTreeAsODF( path: Path): ODF[M,S] = {
+  def getSubTreeAsODF( path: Path): ODF = {
     val subtree: Seq[Node] = getSubTree( path)
     val ancestors: Seq[Node] = path.getAncestors.flatMap{
       case ap: Path =>
@@ -181,12 +180,12 @@ class MutableODF private[odf](
         (subtree ++ ancestors).toVector
     )
   }
-  def intersection( o_df: ODF[M,S] ) : ODF[M,S]={
-    val iPaths = this.intersectingPaths(o_df)
+  def intersection[TM <: Map[Path,Node], TS <: SortedSet[Path]]( that: ODF ) : ODF={
+    val iPaths = this.intersectingPaths(that)
     MutableODF(
       iPaths.map{
         case path: Path => 
-          (nodes.get(path),o_df.nodes.get(path)) match{
+          (nodes.get(path), that.nodes.get(path)) match{
             case ( None, _) => throw new Exception( s"Not found element in intersecting path $path" ) 
             case (  _, None) => throw new Exception( s"Not found element in intersecting path $path" )
             case ( Some(ii: InfoItem), Some(oii: InfoItem)) => ii union oii
@@ -198,7 +197,7 @@ class MutableODF private[odf](
     )
   
   }
-  def getSubTreeAsODF( pathsToGet: Seq[Path]): ODF[M,S] = {
+  def getSubTreeAsODF( pathsToGet: Seq[Path]): ODF = {
     MutableODF(
       nodes.values.filter{
         case node: Node => 
@@ -212,7 +211,7 @@ class MutableODF private[odf](
 
   override def equals( that: Any ) : Boolean ={
     that match{
-      case another: ODF[M,S] =>
+      case another: ODF =>
         println( s"Path equals: ${paths equals another.paths}\n Nodes equals:${nodes equals another.nodes}" )
         (paths equals another.paths) && (nodes equals another.nodes)
       case a: Any => 

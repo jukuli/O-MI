@@ -3,6 +3,7 @@ package types;
 import java.lang.Object;
 import java.util.Vector;
 import types.OdfTypes.*;
+import types.odf.Path;
 import types.OdfTypes.OdfObjects;
 import types.OdfTypes.OdfDescription;
 import types.OdfTypes.OdfMetaData;

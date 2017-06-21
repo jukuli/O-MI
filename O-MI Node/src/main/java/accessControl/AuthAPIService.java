@@ -32,9 +32,9 @@ import parsing.xmlGen.omi.MsgType;
 import parsing.xmlGen.omi.ObjectFactory;
 import parsing.xmlGen.omi.OmiEnvelopeType;
 import parsing.xmlGen.omi.WriteRequestType;
-import types.OmiTypes.OmiRequest;
-import types.Path;
-import types.OmiTypes.UserInfo;
+import types.omi.OmiRequest;
+import types.odf.Path;
+import types.omi.UserInfo;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;

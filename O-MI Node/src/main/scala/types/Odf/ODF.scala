@@ -1,6 +1,8 @@
 package types
 package odf
 
+import java.util.{Set => JavaSet}
+
 import scala.collection.{ Seq, Map, SortedSet }
 import scala.collection.immutable.{TreeSet => ImmutableTreeSet, HashMap => ImmutableHashMap }
 import scala.collection.mutable.{TreeSet => MutableTreeSet, HashMap => MutableHashMap }
@@ -10,28 +12,28 @@ import parsing.xmlGen.{odfDefaultScope, scalaxb, defaultScope}
 
   /** O-DF structure
    */
-trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[Path] ]
+trait ODF//[M <: Map[Path,Node], S<: SortedSet[Path] ]
 {
   /** All nodes(InfoItems and Objects) in O-DF structure.
    */
-  protected[odf] def nodes : M//= HashMap.empty
+  protected[odf] def nodes : Map[Path,Node]//= HashMap.empty
   /** SortedSet of all paths in O-DF structure. 
    * Should be ordered by paths with alpabetic ordering so that after a path
    * comes all its descendant: 
    * A/, A/a, A/a/1, A/b/, A/b/1, Aa/ ..
    *
   */
-  protected[odf] def paths : S //= TreeSet( nodes.keys.toSeq:_* )(PathOrdering)
-  //def copy( nodes : scala.collection.Map[Path,Node] ): ODF[M,S]
+  protected[odf] def paths : SortedSet[Path] //= TreeSet( nodes.keys.toSeq:_* )(PathOrdering)
+  //def copy( nodes : scala.collection.Map[Path,Node] ): ODF
 
   def isEmpty:Boolean
   def nonEmpty:Boolean
   def isRootOnly: Boolean = isEmpty
-  def cutOut( that: ODF[M,S] ): ODF[M,S]
-  def cutOut( cutPaths: Set[Path] ): ODF[M,S]
-  def getTree( paths: Seq[Path] ) : ODF[M,S]
-  def union( that: ODF[M,S]): ODF[M,S] 
-  def removePaths( removedPaths: Iterable[Path]) : ODF[M,S]  
+  def cutOut[TM <: Map[Path,Node], TS <: SortedSet[Path]]( that: ODF ): ODF
+  def cutOut( cutPaths: Set[Path] ): ODF
+  def getTree( paths: Seq[Path] ) : ODF
+  def union[TM <: Map[Path,Node], TS <: SortedSet[Path]]( that: ODF ): ODF 
+  def removePaths( removedPaths: Iterable[Path]) : ODF  
   def immutable: ImmutableODF
   def mutable: MutableODF
   def getInfoItems: Seq[InfoItem] = nodes.collect{ 
@@ -65,7 +67,7 @@ trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[P
         }
     }.toVector
   }
-  def getSubTreeAsODF( pathsToGet: Seq[Path]): ODF[M,S]
+  def getSubTreeAsODF( pathsToGet: Seq[Path]): ODF
   
   def getPaths: Seq[Path] = paths.toVector
   def getNodes: Seq[Node] = nodes.values.toVector
@@ -88,11 +90,11 @@ trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[P
     getChildPaths(path).flatMap{   case p: Path => nodes.get(p) }.toVector
   }
 
-  def --( removedPaths: Iterable[Path] ) : ODF[M,S] = removePaths( removedPaths )
-  def removePath( path: Path) : ODF[M,S]
-  def add( node: Node ) : ODF[M,S]
-  def addNodes( nodesToAdd: Seq[Node] ) : ODF[M,S] 
-  def getSubTreeAsODF( path: Path): ODF[M,S]
+  def --( removedPaths: Iterable[Path] ) : ODF = removePaths( removedPaths )
+  def removePath( path: Path) : ODF
+  def add( node: Node ) : ODF
+  def addNodes( nodesToAdd: Seq[Node] ) : ODF 
+  def getSubTreeAsODF( path: Path): ODF
 
   implicit def asObjectsType : ObjectsType ={
     val firstLevelObjects= getChilds( new Path("Objects") )
@@ -153,11 +155,11 @@ trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[P
     }.toSet
   }
 
-  def update( that: ODF[M,S] ): ODF[M,S]
-  def valuesRemoved: ODF[M,S]
-  def descriptionsRemoved: ODF[M,S]
-  def metaDatasRemoved: ODF[M,S]
-  def attributesRemoved: ODF[M,S]
+  def update[TM <: Map[Path,Node], TS <: SortedSet[Path]]( that: ODF ): ODF
+  def valuesRemoved: ODF
+  def descriptionsRemoved: ODF
+  def metaDatasRemoved: ODF
+  def attributesRemoved: ODF
   def createObjectType( obj: Object ): ObjectType ={
     val (objects, infoItems ) = getChilds( obj.path ).partition{
       case obj: Object => true
@@ -186,7 +188,7 @@ trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[P
   }
   override def equals( that: Any ) : Boolean ={
     that match{
-      case another: ODF[M,S] =>
+      case another: ODF =>
         println( s"Path equals: ${paths equals another.paths}\n Nodes equals:${nodes equals another.nodes}" )
         (paths equals another.paths) && (nodes equals another.nodes)
       case a: Any => 
@@ -195,9 +197,9 @@ trait ODF[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[P
     }
   }
   override lazy val hashCode: Int = this.nodes.hashCode
-  def intersection( o_df: ODF[M,S] ) : ODF[M,S]
-  def intersectingPaths[A <: scala.collection.Map[Path,Node], B<: scala.collection.SortedSet[Path] ]( o_df: ODF[A,B]): SortedSet[Path] ={
-    paths.intersect(o_df.paths)
+  def intersection[TM <: Map[Path,Node], TS <: SortedSet[Path]]( that: ODF ) : ODF
+  def intersectingPaths[TM <: Map[Path,Node], TS <: SortedSet[Path]]( that: ODF ): SortedSet[Path] ={
+    paths.intersect(that.paths)
   }
 }
 
@@ -205,7 +207,7 @@ object ODF{
   /*
   def apply[M <: scala.collection.Map[Path,Node], S<: scala.collection.SortedSet[Path] ]( 
     nodes: M
-  ) : ODF[M,S] ={
+  ) : ODF ={
     nodes match {
       case mutable: 
     }

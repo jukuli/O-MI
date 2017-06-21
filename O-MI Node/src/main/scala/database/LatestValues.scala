@@ -43,9 +43,6 @@ object LatestValues {
   def empty = LatestValues(Map.empty)
 }
 
-case class GetChilds(objPath: Path) extends Query[LatestValues, Seq[Node]] {
-  def query(t: OdfTree, d: Date) = t.root.getChilds(objPath)
-}
 
 case class LookupSensorData(sensor: Path) extends Query[LatestValues, Option[Value[Any]]] {
   def query(ls: LatestValues, d: Date) = ls.allData.get(sensor)
@@ -81,6 +78,9 @@ object OdfTree {
   def empty = OdfTree(ImmutableODF())
 }
 
+case class GetChilds(objPath: Path) extends Query[OdfTree, Seq[Node]] {
+  def query(t: OdfTree, d: Date) = t.root.getChilds(objPath)
+}
 case class GetTree() extends Query[OdfTree, ImmutableODF] {
   def query(t: OdfTree, d: Date) = t.root
 }
