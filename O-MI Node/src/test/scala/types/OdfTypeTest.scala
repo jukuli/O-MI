@@ -133,32 +133,32 @@ class OdfTypesTest extends mutable.Specification{
     val lII = InfoItem(
       "II",
       Path( "Objects/Obj/II"),
-      Vector(QlmID( "II1" )),
-      Vector(Description("test", Some("English"))),
-      Vector(Value( "test",testTime )),
-      Some(MetaData(Vector(InfoItem( "MD1", Path( "Objects/Obj/II/MetaData/MD1"))))),
-      HashMap( "test1" -> "test" )
+      names =         Vector(QlmID( "II1" )),
+      descriptions =  Vector(Description("test", Some("English"))),
+      values =        Vector(Value( "test",testTime )),
+      metaData =      Some(MetaData(Vector(InfoItem( "MD1", Path( "Objects/Obj/II/MetaData/MD1"))))),
+      attributes =    HashMap( "test1" -> "test" )
       )
     val rII =  InfoItem(
       "II",
       Path( "Objects/Obj/II"),
-      Vector(QlmID( "II2" )),
-      Vector(Description("test", Some("Finnish"))),
-      Vector(Value( 31,testTime )),
-      Some(MetaData(Vector(InfoItem( "MD2", Path( "Objects/Obj/II/MetaData/MD2"))))),
-      HashMap( "test2" -> "test" )
+     names =         Vector(QlmID( "II2" )),
+     descriptions =  Vector(Description("test", Some("Finnish"))),
+     values =        Vector(Value( 31,testTime )),
+     metaData =      Some(MetaData(Vector(InfoItem( "MD2", Path( "Objects/Obj/II/MetaData/MD2"))))),
+     attributes =    HashMap( "test2" -> "test" )
     )
     val correct = InfoItem(
       "II",
       Path( "Objects/Obj/II"),
-      Vector(QlmID("II1"),QlmID( "II2" )),
-      Vector(Description("test", Some("English")),Description("test", Some("Finnish"))),
-      Vector(Value( "test",testTime ),Value( 31,testTime )),
-      Some(MetaData(Vector(
-        InfoItem( "MD1", Path( "Objects/Obj/II/MetaData/MD1")),
-        InfoItem( "MD2", Path( "Objects/Obj/II/MetaData/MD2"))
-      ))),
-      HashMap( "test1" -> "test", "test2" -> "test" )
+     names =         Vector(QlmID("II1"),QlmID( "II2" )),
+     descriptions =  Vector(Description("test", Some("English")),Description("test", Some("Finnish"))),
+     values =        Vector(Value( "test",testTime ),Value( 31,testTime )),
+     metaData =      Some(MetaData(Vector(
+     InfoItem( "MD1", Path( "Objects/Obj/II/MetaData/MD1")),
+       InfoItem( "MD2", Path( "Objects/Obj/II/MetaData/MD2"))
+     ))),
+     attributes = HashMap( "test1" -> "test", "test2" -> "test" )
     )
     
     lII.union(rII) should beEqualTo( correct) 
@@ -190,7 +190,7 @@ class OdfTypesTest extends mutable.Specification{
   }
 
   def createCorrect[M<:scala.collection.Map[Path,Node],S <: scala.collection.SortedSet[Path]](
-    o_df: ODF[M,S]
+    o_df: ODF
   ) = {
     val iIPaths = testingNodes.collect{ 
       case iI: InfoItem => iI.path
@@ -210,7 +210,7 @@ class OdfTypesTest extends mutable.Specification{
     createdObjPaths should contain(objPaths ++ automaticallyCreatedPaths) )
   }
   def getCorrectSubTree[M<:scala.collection.Map[Path,Node],S <: scala.collection.SortedSet[Path]](
-    o_df: ODF[M,S]
+    o_df: ODF
   ) = {
     o_df.getSubTreePaths( Path("Objects/ObjectA")).toSet should contain(
       Set(
@@ -221,12 +221,12 @@ class OdfTypesTest extends mutable.Specification{
     )
   }
   def addTest[M<:scala.collection.Map[Path,Node],S <: scala.collection.SortedSet[Path]](
-    o_df: ODF[M,S]
+    o_df: ODF
   ) = {
     val beAdded = InfoItem( 
         "II1",
         Path("Objects/ObjectN/SubObj/II1"),
-        Vector(
+        names = Vector(
           QlmID(
             "II2O1",
             Some("TestID"),
@@ -238,13 +238,13 @@ class OdfTypesTest extends mutable.Specification{
             Some("TestTag")
           )
         ),
-        testingDescription,
-        Vector(
+        descriptions = testingDescription,
+        values = Vector(
           Value( 93, testTime, testingAttributes ), 
           Value( "51.9", "xs:float", testTime ), 
           Value( "51.9", testTime, testingAttributes)
         ),
-        Some(MetaData(
+        metaData = Some(MetaData(
           Vector(
           InfoItem( 
             "A",
@@ -255,7 +255,7 @@ class OdfTypesTest extends mutable.Specification{
             Path("Objects/ObjectA/II2/MetaData/B")
           ))
         )),
-        testingAttributes
+        attributes = testingAttributes
       )
     o_df.add( beAdded ).getSubTreePaths( 
       Path("Objects/ObjectN")
@@ -268,7 +268,7 @@ class OdfTypesTest extends mutable.Specification{
     )
   }
   def toXMLTest[M<:scala.collection.Map[Path,Node],S <: scala.collection.SortedSet[Path]](
-    o_df: ODF[M,S]
+    o_df: ODF
   ) = {
     val p = new scala.xml.PrettyPrinter(120, 4)
     o_df.asXML showAs{
@@ -278,7 +278,7 @@ class OdfTypesTest extends mutable.Specification{
     } must beEqualToIgnoringSpace( testingNodesAsXML )
   }
   def fromXMLTest[M<:scala.collection.Map[Path,Node],S <: scala.collection.SortedSet[Path]](
-    o_df: ODF[M,S]
+    o_df: ODF
   ) ={
     ODFParser.parse( o_df.asXML.toString ) should beRight{
       o: ImmutableODF => 
@@ -363,12 +363,12 @@ class OdfTypesTest extends mutable.Specification{
       InfoItem( 
         "II1",
         Path("Objects/ObjectA/II1"),
-        Vector( QlmID( "II1" ))
+        names = Vector( QlmID( "II1" ))
       ),
       InfoItem( 
         "II2",
         Path("Objects/ObjectA/II2"),
-        Vector(
+        names = Vector(
           QlmID( "II2" ),
           QlmID(
             "II2O1",
@@ -381,30 +381,30 @@ class OdfTypesTest extends mutable.Specification{
             Some("TestTag")
           )
         ),
-        testingDescription,
-        Vector(
+        descriptions = testingDescription,
+        values = Vector(
           Value( 93, testTime), 
           Value( "51.9", "xs:float", testTime ), 
           Value( "81.5", testTime)
         ),
-        Some(MetaData(
+        metaData = Some(MetaData(
           Vector(
           InfoItem( 
             "A",
             Path("Objects/ObjectA/II2/MetaData/A"),
-            Vector( QlmID( "A" ))
+            names = Vector( QlmID( "A" ))
           ),
           InfoItem( 
             "B",
             Path("Objects/ObjectA/II2/MetaData/B"),
-            Vector( QlmID( "B" ))
+            names = Vector( QlmID( "B" ))
           ))
         ))
       ),
       InfoItem( 
         "II1",
         Path("Objects/ObjectB/ObjectB/II1"),
-        Vector( QlmID( "II1" ))
+        names = Vector( QlmID( "II1" ))
       ),
       Object(
         Vector(
@@ -420,8 +420,8 @@ class OdfTypesTest extends mutable.Specification{
           )
         ),
         Path("Objects/ObjectC/ObjectCC"),
-        Some("TestingType"),
-        testingDescription
+        typeAttribute = Some("TestingType"),
+        descriptions  = testingDescription
      )
     )
 
@@ -447,35 +447,35 @@ class OdfTypesTest extends mutable.Specification{
       Vector(
         OdfObject(
         Vector(),
-          types.Path("Objects/SmartHouse"), Vector(
+          Path("Objects/SmartHouse"), Vector(
             OdfInfoItem(
-              types.Path("Objects/SmartHouse/PowerConsumption"), Vector(
+              Path("Objects/SmartHouse/PowerConsumption"), Vector(
                 OdfValue(
                   "180", "xs:string",
                     Timestamp.valueOf("2014-12-18 15:34:52"))), None, None), OdfInfoItem(
-              types.Path("Objects/SmartHouse/Moisture"), Vector(
+              Path("Objects/SmartHouse/Moisture"), Vector(
                 OdfValue(
                   "0.20", "xs:string",
                     new Timestamp(1418916892L * 1000))), None, None)), Vector(
             OdfObject(
             Vector(),
-              types.Path("Objects/SmartHouse/SmartFridge"), Vector(
+              Path("Objects/SmartHouse/SmartFridge"), Vector(
                 OdfInfoItem(
-                  types.Path("Objects/SmartHouse/SmartFridge/PowerConsumption"), Vector(
+                  Path("Objects/SmartHouse/SmartFridge/PowerConsumption"), Vector(
                     OdfValue(
                       "56", "xs:string",
                         Timestamp.valueOf("2014-12-18 15:34:52"))), None, None)), Vector(), None, None), OdfObject(
             Vector(),
-              types.Path("Objects/SmartHouse/SmartOven"), Vector(
+              Path("Objects/SmartHouse/SmartOven"), Vector(
                 OdfInfoItem(
-                  types.Path("Objects/SmartHouse/SmartOven/PowerOn"), Vector(
+                  Path("Objects/SmartHouse/SmartOven/PowerOn"), Vector(
                     OdfValue(
                       "1", "xs:string",
                         Timestamp.valueOf("2014-12-18 15:34:52"))), None, None)), Vector(), None, None)), None, None), OdfObject(
         Vector(),
-          types.Path("Objects/SmartCar"), Vector(
+          Path("Objects/SmartCar"), Vector(
             OdfInfoItem(
-              types.Path("Objects/SmartCar/Fuel"),
+              Path("Objects/SmartCar/Fuel"),
               Vector(OdfValue(
                   "30",
                   "xs:string",
@@ -484,7 +484,7 @@ class OdfTypesTest extends mutable.Specification{
               None, 
               Some(OdfMetaData(
                 Vector(OdfInfoItem(
-                  types.Path("Objects/SmartCar/Fuel/MetaData/Units"),
+                  Path("Objects/SmartCar/Fuel/MetaData/Units"),
                   Vector(OdfValue(
                     "Litre",
                     "xs:string",
@@ -495,13 +495,13 @@ class OdfTypesTest extends mutable.Specification{
             )),
           Vector(), None, None), OdfObject(
         Vector(),
-          types.Path("Objects/SmartCottage"), Vector(), Vector(
+          Path("Objects/SmartCottage"), Vector(), Vector(
             OdfObject(
             Vector(),
-              types.Path("Objects/SmartCottage/Heater"), Vector(), Vector(), None, None), OdfObject(
+              Path("Objects/SmartCottage/Heater"), Vector(), Vector(), None, None), OdfObject(
             Vector(),
-              types.Path("Objects/SmartCottage/Sauna"), Vector(), Vector(), None, None), OdfObject(
+              Path("Objects/SmartCottage/Sauna"), Vector(), Vector(), None, None), OdfObject(
             Vector(),
-              types.Path("Objects/SmartCottage/Weather"), Vector(), Vector(), None, None)), None, None)), None)
+              Path("Objects/SmartCottage/Weather"), Vector(), Vector(), None, None)), None, None)), None)
   }
 }

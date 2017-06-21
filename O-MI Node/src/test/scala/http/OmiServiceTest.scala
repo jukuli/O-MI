@@ -25,6 +25,7 @@ import akka.stream._
 import akka.stream.ActorMaterializer
 import testHelpers.Specs2Interface
 import types._
+import types.odf.Path
 
 class OmiServiceTest
   extends {
@@ -99,7 +100,7 @@ class OmiServiceTest
   }
   def afterAll = {
     dbConnection.destroy()
-    singleStores.hierarchyStore execute TreeRemovePath(types.Path("/Objects"))
+    singleStores.hierarchyStore execute TreeRemovePath(Path("/Objects"))
     system.terminate()
     //XXX: DID NOT WORK
     //Await.ready(system.terminate(), 10 seconds)

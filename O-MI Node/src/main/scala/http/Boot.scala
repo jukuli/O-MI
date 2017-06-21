@@ -40,8 +40,8 @@ import database._
 import agentSystem._
 import responses.{RequestHandler, SubscriptionManager, CallbackHandler}
 import types.OdfTypes.OdfTreeCollection.seqToOdfTreeCollection
-import types.OmiTypes.{OmiReturn,OmiResult,Results,WriteRequest,ResponseRequest}
-import types.OmiTypes.Returns.ReturnTypes._
+import types.omi.{OmiReturn,OmiResult,Results,WriteRequest,ResponseRequest}
+import types.omi.Returns.ReturnTypes._
 import OmiServer._
 import types.odf._
 import akka.stream.{ActorMaterializer, Materializer}
@@ -209,13 +209,13 @@ object OmiServer {
 
       system.log.info("Testing InputPusher...")
 
-      val objects = NewTypeConverter.convertODF(ImmutableODF(
+      val objects = ImmutableODF(
         InfoItem(
           "num-latest-values-stored",
           Path(settings.settingsOdfPath + "num-latest-values-stored"), 
           descriptions = Vector(Description(numDescription)),
           values = Vector(Value(settings.numLatestValues.toString, "xs:integer", currentTime))
-        ).createAncestors.toVector))
+        ).createAncestors.toVector)
       
       val write = WriteRequest( objects, None,  60  seconds)
       implicit val timeout = Timeout( 60 seconds)

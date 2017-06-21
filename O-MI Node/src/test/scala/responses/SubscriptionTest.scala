@@ -25,8 +25,9 @@ import java.util.{Calendar, TimeZone}
 import akka.actor._
 import com.typesafe.config.ConfigFactory
 import database._
-import types.OmiTypes._
-import types.OdfTypes._
+import types.omi._
+import types.odf._
+import types.odf.Path
 import types._
 import http.{ OmiConfig, OmiConfigExtension }
 
@@ -113,13 +114,13 @@ class SubscriptionTest(implicit ee: ExecutionEnv) extends Specification with Bef
   calendar.setTimeZone(timeZone)
   val date = calendar.getTime
   val testtime = new java.sql.Timestamp(date.getTime)
-      def pollValues(subIdO: Option[Long]): Vector[OdfValue[Any]] = subIdO.flatMap{ 
+      def pollValues(subIdO: Option[Long]): Vector[Value[Any]] = subIdO.flatMap{ 
         subId => 
           pollSub(subId).results.headOption.flatMap{ 
             result => 
               result.odf.headOption.map{ 
                 objects => 
-                  getInfoItems(objects).flatMap{ 
+                  objects.getInfoItems.flatMap{ 
                     info => info.values
                   } 
               }
@@ -136,7 +137,7 @@ class SubscriptionTest(implicit ee: ExecutionEnv) extends Specification with Bef
   def afterAll = {
     //system.eventStream.publish(UnMute(EventFilter.debug(),EventFilter.info(), EventFilter.warning()))
     cleanAndShutdown
-    singleStores.hierarchyStore execute TreeRemovePath(types.Path("/Objects"))
+    singleStores.hierarchyStore execute TreeRemovePath(Path("/Objects"))
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -181,7 +182,7 @@ class SubscriptionTest(implicit ee: ExecutionEnv) extends Specification with Bef
       val sub1Id = addSub(5,-1, Seq("p/2"))
       val sub2Id = addSub(5,-1, Seq("p/2"))
       val sub3Id = addSub(5,-1, Seq("p/1"))
-      def pollIds: Vector[Vector[OdfValue[Any]]] = for {
+      def pollIds: Vector[Seq[Value[Any]]] = for {
         response <- Vector( sub1Id, sub2Id, sub3Id)
         
         vectorResult <- (for {
@@ -193,12 +194,12 @@ class SubscriptionTest(implicit ee: ExecutionEnv) extends Specification with Bef
 
             result <- response.results.headOption
             objects <- result.odf
-          } yield getInfoItems(objects) flatMap {info => info.values}
+          } yield objects.getInfoItems flatMap {info => info.values}
         ).toVector
 
       } yield vectorResult
       val pollsBefore = pollIds
-      val emptyCheck = pollsBefore.foldLeft( Vector.empty must have size(0) ){ case (l, r) => l and (r must be empty)}
+      val emptyCheck = pollsBefore.foldLeft( Vector.empty must have size(0) ){ case (l, r) => l and (r.toVector must be empty)}
 
       addValue("p/2", nv("1", 10000))
       addValue("p/2", nv("2", 20000))
@@ -213,7 +214,7 @@ class SubscriptionTest(implicit ee: ExecutionEnv) extends Specification with Bef
       val subIdO: Option[Long] = addSub(5, 4, Seq("p/1")).results.headOption.flatMap{ result => result.requestIDs.headOption }
 
       Thread.sleep(2000)
-      val values: Vector[OdfValue[Any]] = pollValues(subIdO)
+      val values: Vector[Value[Any]] = pollValues(subIdO)
       values must have size(0)
     }
 
@@ -221,10 +222,10 @@ class SubscriptionTest(implicit ee: ExecutionEnv) extends Specification with Bef
       val subIdO: Option[Long] = addSub(5, 4, Seq("p/1")).results.headOption.flatMap{ result => result.requestIDs.headOption }
 
       Thread.sleep(2000)
-      val valuesEmpty: Vector[OdfValue[Any]] = pollValues(subIdO)
+      val valuesEmpty: Vector[Value[Any]] = pollValues(subIdO)
       val emptyCheck = valuesEmpty must have size(0)
       Thread.sleep(2000)
-      val values: Vector[OdfValue[Any]] = pollValues(subIdO)
+      val values: Vector[Value[Any]] = pollValues(subIdO)
       val sizeCheck = values must have size(1)
       emptyCheck and sizeCheck
     }
@@ -235,10 +236,10 @@ class SubscriptionTest(implicit ee: ExecutionEnv) extends Specification with Bef
       val subIdO: Option[Long] = addSub(5, 1, Seq("p/3")).results.headOption.flatMap{ result => result.requestIDs.headOption }
 
       Thread.sleep(2000)
-      val values1: Vector[OdfValue[Any]] = pollValues(subIdO) 
+      val values1: Vector[Value[Any]] = pollValues(subIdO) 
       val sizeCheck1 = values1 must have size(2)
       Thread.sleep(2000)
-      val values2: Vector[OdfValue[Any]] = pollValues(subIdO)
+      val values2: Vector[Value[Any]] = pollValues(subIdO)
       val sizeCheck2 = values2 must have size(2)
       sizeCheck1 and sizeCheck2
 
@@ -294,7 +295,7 @@ class SubscriptionTest(implicit ee: ExecutionEnv) extends Specification with Bef
   def initDB() = {
     //pathPrefix
     val pp = Path("Objects/SubscriptionTest/")
-    val pathAndvalues: Iterable[(String, Vector[OdfValue[Any]])] = Seq(
+    val pathAndvalues: Iterable[(String, Vector[Value[Any]])] = Seq(
       ("p/1", nv("1")),
       ("p/2", nv("2")),
       ("p/3", nv("3")),
@@ -310,8 +311,8 @@ class SubscriptionTest(implicit ee: ExecutionEnv) extends Specification with Bef
   def addSub(ttl: Long, interval: Long, paths: Seq[String], callback: String = "") = {
     val hTree = singleStores.hierarchyStore execute GetTree()
     val p = paths.flatMap(p => hTree.get(Path("Objects/SubscriptionTest/" + p)))
-              .map(types.OdfTypes.createAncestors(_))
-              .reduceOption(_.union(_))
+      .map( node => ImmutableODF(Vector(node)))
+              .reduceOption(_.union(_).immutable)
               .getOrElse(throw new Exception("subscription path did not exist"))
 
     val req = SubscriptionRequest( interval seconds, p, None, None, None, ttl seconds)
@@ -330,9 +331,9 @@ class SubscriptionTest(implicit ee: ExecutionEnv) extends Specification with Bef
   }
 
   //add new value easily
-  def addValue(path: String, nv: Vector[OdfValue[Any]]): Unit = {
+  def addValue(path: String, nv: Vector[Value[Any]]): Unit = {
     val pp = Path("Objects/SubscriptionTest/")
-    val odf = OdfTypes.createAncestors(OdfInfoItem(pp / path, nv))
+    val odf = ImmutableODF(Vector(InfoItem(pp / path, nv)))
     val writeReq = WriteRequest( odf)
     implicit val timeout = Timeout( 10 seconds )
     val future = requestHandler ? writeReq
@@ -340,8 +341,8 @@ class SubscriptionTest(implicit ee: ExecutionEnv) extends Specification with Bef
   }
 
   //create new odfValue value easily
-  def nv(value: String, timestamp: Long = 0L): Vector[OdfValue[Any]] = {
-    Vector(OdfValue(
+  def nv(value: String, timestamp: Long = 0L): Vector[Value[Any]] = {
+    Vector(Value(
     value,
     "",
     new Timestamp(testtime.getTime + timestamp)

@@ -11,7 +11,7 @@ import org.specs2.mutable._
 import com.typesafe.config.ConfigFactory
 import http.OmiConfigExtension
 import testHelpers.{Actors, SystemTestCallbackServer}
-import types.OmiTypes._
+import types.omi._
 
 
 class CallbackHandlerTest(implicit ee: ExecutionEnv) extends Specification {

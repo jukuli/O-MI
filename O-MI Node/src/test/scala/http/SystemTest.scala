@@ -25,6 +25,7 @@ import org.specs2.mutable._
 import org.specs2.specification.BeforeAfterAll
 import responses.{RequestHandler, SubscriptionManager, CallbackHandler}
 import testHelpers._
+import types.odf.Path
 
 class SystemTest(implicit ee: ExecutionEnv) extends Specification with BeforeAfterAll {
 
@@ -38,7 +39,7 @@ class SystemTest(implicit ee: ExecutionEnv) extends Specification with BeforeAft
   import omiServer.{ singleStores, dbConnection, system, materializer}
   // TODO: better cleaning after tests
   def beforeAll() = {
-    singleStores.hierarchyStore execute TreeRemovePath(types.Path("/Objects"))
+    singleStores.hierarchyStore execute TreeRemovePath(Path("/Objects"))
   }
   sequential
 
@@ -122,7 +123,7 @@ class SystemTest(implicit ee: ExecutionEnv) extends Specification with BeforeAft
     }
     Await.ready(future, 2 seconds)
     dbConnection.destroy()
-    singleStores.hierarchyStore execute TreeRemovePath(types.Path("/Objects"))
+    singleStores.hierarchyStore execute TreeRemovePath(Path("/Objects"))
   }
   def getPostRequest(in: String): HttpRequest = {
     val tmp = RequestBuilding.Post("http://localhost:8080/", in)

@@ -18,8 +18,8 @@ import org.specs2.matcher._
 import org.specs2.matcher.FutureMatchers._
 import com.typesafe.config.{ConfigFactory, Config}
 import testHelpers.Actorstest
-import types.Path
-import types.OmiTypes._
+import types.odf.Path
+import types.omi._
 import responses.{RemoveHandlerT,RemoveSubscription}
 import agentSystem.{
   AgentName,

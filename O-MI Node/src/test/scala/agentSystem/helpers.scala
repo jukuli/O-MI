@@ -8,7 +8,7 @@ import akka.actor.{ActorRef, Actor, ActorSystem, Props , Terminated}
 import akka.testkit.{TestActorRef}
 
 import agentSystem._
-import types.OmiTypes.{Responses, WriteRequest, ReadRequest, CallRequest, ResponseRequest}
+import types.omi.{Responses, WriteRequest, ReadRequest, CallRequest, ResponseRequest}
 import http.CLICmds._
 import AgentEvents._
 

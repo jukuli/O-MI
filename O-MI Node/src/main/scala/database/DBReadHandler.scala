@@ -83,6 +83,7 @@ trait DBReadHandler extends DBHandlerBase{
              ) ++ nfResults
              ResponseRequest( results )
            case None =>
+             log.warning( "Not found values from DB.")
              ResponseRequest( Vector(Results.NotFoundPaths(read.odf) ) )
          }
 

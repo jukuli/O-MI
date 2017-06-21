@@ -37,8 +37,9 @@ import org.specs2.matcher.XmlMatchers._
 import org.specs2.mock.Mockito
 import org.specs2.specification.AfterAll
 import responses.{CallbackHandler, RequestHandler, SubscriptionManager}
-import types.{OdfTypes, Path}
+import types.OdfTypes
 import types.OdfTypes._
+import types.odf.Path
 import types.OmiTypes.{ReadRequest, WriteRequest, ResponseRequest, UserInfo}
 
 //Very basic test for testing that the analytics results are consistent every patch

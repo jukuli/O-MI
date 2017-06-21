@@ -8,7 +8,8 @@ import types._
 import types.OmiTypes._
 import types.OdfTypes.OdfTreeCollection._
 import types.OdfTypes._
-import types.Path._
+import types.odf.Path
+import types.odf.Path._
 import java.sql.Timestamp
 import scala.xml.Utility.trim
 import scala.xml.NodeSeq

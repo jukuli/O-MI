@@ -280,7 +280,7 @@ trait DBCachedReadWrite extends DBReadWrite{
       val dbioAction = DBIO.sequence(limited.map(_.result)).map( _.flatten )
       val toObjects = dbioAction.map{
         case dbvals if dbvals.nonEmpty =>
-          //log.debug("DBValue results:\n" +dbvals.mkString("\n"))
+          log.debug("DBValue results:\n" +dbvals.mkString("\n"))
           val resultIIs =  dbvals.groupBy(_.hierarchyId).flatMap{
               case (id, dbvalues) => 
                 hierarchyIDToPath.get(id).map{
@@ -289,7 +289,10 @@ trait DBCachedReadWrite extends DBReadWrite{
                 }
             }
           Some( ImmutableODF(resultIIs) )
-          case dbvals => None
+          case dbvals => 
+            log.debug( "No DBValues found.")
+            None
+           
       }
       db.run(toObjects.transactionally)
 
