@@ -15,7 +15,9 @@
 package http
 
 import java.net.{InetAddress, URI, URL, URLDecoder}
+import java.nio.charset.Charset
 import java.nio.file.{Files, Paths}
+import java.security.spec.EllipticCurve
 import java.util.Date
 
 import scala.concurrent.duration._
@@ -40,6 +42,8 @@ import akka.stream._
 import akka.stream.ActorMaterializer
 import akka.http.scaladsl.model.ws
 import accessControl.AuthAPIService
+import com.emstlk.nacl4s
+import com.emstlk.nacl4s.crypto.{KeyPair, SigningKey, SigningKeyPair, VerifyKey}
 import http.Authorization._
 import parsing.OmiParser
 import responses.{CallbackHandler, RESTHandler, RESTRequest, RemoveSubscription, RequestHandler}
@@ -48,6 +52,8 @@ import types.OmiTypes._
 import types.OmiTypes.Callback._
 import types.{ParseError, Path}
 import database.{GetTree, SingleStores}
+import org.whispersystems.curve25519.Curve25519
+import scorex.crypto.signatures.EllipticCurveSignatureScheme
 
 import scala.compat.java8.OptionConverters._
 
@@ -324,9 +330,6 @@ trait OmiService
         case Failure(ex) =>
           Future.successful(Responses.InternalError(ex))
       }
-
-
-
       // if timeoutfuture completes first then timeout is returned
       Future.firstCompletedOf(Seq(responseF, ttlPromise.future)) map {
 
@@ -336,8 +339,42 @@ trait OmiService
           if (statusO exists (_ != "200")){
             log.warn(s"Error code $statusO with following request:\n${requestString}")
           }
+          val origResults = response.results
+          val newResults = origResults.map { result =>
+            val toSign = result.odf.get.asXML.toString()
+            log.info(toSign);
 
-          response.asXML // return
+            val privkey64 = settings.privateKey
+            val pubkey64 = settings.publicKey
+            val privkey = scorex.crypto.encode.Base64.decode(privkey64)
+            val pubkey = scorex.crypto.encode.Base64.decode(pubkey64)
+
+            log.info("privatekey from config="+settings.privateKey)
+            log.info("publickey from config="+settings.publicKey)
+
+            val hashedData = scorex.crypto.hash.Sha512(toSign)
+            log.info(hashedData.toString())
+            val hashed64 = scorex.crypto.encode.Base64.encode(hashedData)
+            log.info(hashed64)
+
+            val myKeys = SigningKeyPair(privkey,pubkey)
+
+            val signature = SigningKey(myKeys.privateKey).sign(hashedData)
+            val sig64 = scorex.crypto.encode.Base64.encode(signature)
+            log.info(sig64)
+
+            val verfi = VerifyKey(myKeys.publicKey).verify(hashedData,signature)
+            log.info(verfi.toString())
+
+            val origReturn = result.returnValue
+            origReturn.toReturnType.attributes
+            //val newReturn = origReturn.copy(extraAttributes = Map("objectsSigned" -> signed.toString()))
+            val newReturn = origReturn.copy(extraAttributes = Map("hashSigned" -> sig64,"objectsHashed" ->hashed64))
+            result.copy(returnValue = newReturn)
+          }
+          log.info("firstCOMpleted of wutawt")
+          response.copy(results = newResults).asXML
+          //response.asXML // return
       }
 
     } catch {

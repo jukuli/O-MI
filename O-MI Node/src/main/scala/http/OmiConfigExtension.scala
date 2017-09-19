@@ -136,6 +136,9 @@ class OmiConfigExtension( val config: Config) extends Extension
   //connection fails
   val websocketQueueSize : Int = config.getInt("omi-service.websocket-queue-size")
 
+  //keys for signing
+  val privateKey = config.getString("crypto.privatekey")
+  val publicKey = config.getString("crypto.publickey")
 }
 
 

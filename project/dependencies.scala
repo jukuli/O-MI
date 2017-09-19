@@ -3,6 +3,14 @@ import Keys._
 
 object Dependencies {
 
+  // nacl4
+  var nacl4 = "com.github.emstlk" %% "nacl4s" % "1.0.0"
+  // tweetnacl
+  var tweetnacl = "org.webjars.npm" % "tweetnacl" % "0.14.3"
+
+  //scrypt
+  val scryptV = "1.2.1"
+  val scrypt = "org.scorexfoundation" %% "scrypto" % scryptV
   //Akka 
   val akkaV = "2.4.8"
   val akkaActor    = "com.typesafe.akka" %% "akka-actor" % akkaV //
@@ -75,7 +83,10 @@ object Dependencies {
     commonsLang,
     prevaylerCore,
     prevaylerFactory,
-    gson)
+    gson,
+    scrypt,
+    tweetnacl,
+    nacl4)
 
   //val servletDependencies: Seq[ModuleID] = Seq(
   //  sprayServlet,
